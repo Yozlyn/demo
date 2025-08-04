@@ -9,7 +9,6 @@
     
     <!-- 登录卡片 -->
     <el-card class="login-card" shadow="hover">
-      <!-- 原有登录卡片内容保持不变 -->
       <div class="login-header">
         <h2 class="login-title">学子通教育装备商城登录</h2>
         <p class="login-desc">请输入账号信息</p>
@@ -22,7 +21,7 @@
         class="login-form"
         label-position="left"
         label-width="70px"
-        @keyup.enter.prevent="handleLogin"
+        @submit.prevent="handleLogin"
       >
         <!-- 用户名 -->
         <el-form-item label="用户名" prop="suName">
@@ -32,6 +31,7 @@
             prefix-icon="User"
             :maxlength="20"
             clearable
+            autofocus
           />
         </el-form-item>
         
@@ -49,14 +49,17 @@
         </el-form-item>
 
         <!-- 验证码 -->
-        <el-form-item label="验证码" prop="captcha">
+        <el-form-item 
+          v-if="!rememberMe || !hasSavedPassword" 
+          label="验证码" 
+          prop="captcha"
+        >
           <div class="captcha-container">
             <el-input
               v-model="loginForm.captcha"
               placeholder="请输入验证码"
               class="captcha-input"
               :maxlength="4"
-              @keyup.enter.prevent="handleLogin"
             />
             <div class="captcha-image" @click="refreshCaptcha">
               <span>{{ captchaText }}</span>
@@ -67,7 +70,7 @@
         <!-- 记住密码和忘记密码 -->
         <el-form-item class="form-actions">
           <el-checkbox v-model="rememberMe" size="small">记住密码</el-checkbox>
-          <el-link type="primary" :underline="false" class="forgot-password" @click="handleForgotPassword">
+          <el-link type="primary" underline="never" class="forgot-password" @click="handleForgotPassword">
             忘记密码?
           </el-link>
         </el-form-item>
@@ -77,7 +80,7 @@
           <el-button 
             type="primary" 
             class="login-btn" 
-            @click="handleLogin"
+            native-type="submit"
             :loading="loginLoading"
           >
             登录
@@ -91,18 +94,18 @@
           <div class="line"></div>
         </div>
         
-      <div class="social-login">
-        <el-button circle size="large" type="success" @click="handleSocialLogin('wechat')">
-          <svg t="1753868751557" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7010" width="24" height="24" fill="currentColor">
-            <path d="M664.250054 368.541681c10.015098 0 19.892049 0.732687 29.67281 1.795902-26.647917-122.810047-159.358451-214.077703-310.826188-214.077703-169.353083 0-308.085774 114.232694-308.085774 259.274068 0 83.708494 46.165436 152.460344 123.281791 205.78483l-30.80868 91.730191 107.688651-53.455469c38.558178 7.53665 69.459978 15.308661 107.924012 15.308661 9.66308 0 19.230993-0.470721 28.752858-1.225921-6.025227-20.36584-9.521864-41.723264-9.521864-63.862493C402.328693 476.632491 517.908058 368.541681 664.250054 368.541681zM498.62897 285.87389c23.200398 0 38.557154 15.120372 38.557154 38.061874 0 22.846334-15.356756 38.156018-38.557154 38.156018-23.107277 0-46.260603-15.309684-46.260603-38.156018C452.368366 300.994262 475.522716 285.87389 498.62897 285.87389zM283.016307 362.090758c-23.107277 0-46.402843-15.309684-46.402843-38.156018 0-22.941502 23.295566-38.061874 46.402843-38.061874 23.081695 0 38.46301 15.120372 38.46301 38.061874C321.479317 346.782098 306.098002 362.090758 283.016307 362.090758zM945.448458 606.151333c0-121.888048-123.258255-221.236753-261.683954-221.236753-146.57838 0-262.015505 99.348706-262.015505 221.236753 0 122.06508 115.437126 221.200938 262.015505 221.200938 30.66644 0 61.617359-7.609305 92.423993-15.262612l84.513836 45.786813-23.178909-76.17082C899.379213 735.776599 945.448458 674.90216 945.448458 606.151333zM598.803483 567.994292c-15.332197 0-30.807656-15.096836-30.807656-30.501688 0-15.190981 15.47546-30.477129 30.807656-30.477129 23.295566 0 38.558178 15.286148 38.558178 30.477129C637.361661 552.897456 622.099049 567.994292 598.803483 567.994292zM768.25071 567.994292c-15.213493 0-30.594809-15.096836-30.594809-30.501688 0-15.190981 15.381315-30.477129 30.594809-30.477129 23.107277 0 38.558178 15.286148 38.558178 30.477129C806.808888 552.897456 791.357987 567.994292 768.25071 567.994292z" p-id="7011"></path>
-          </svg>
-        </el-button>
-        <el-button circle size="large" type="default" @click="handleSocialLogin('QQ')">
-          <svg t="1753868771769" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7980" width="24" height="24" fill="currentColor">
-            <path d="M824.8 613.2c-16-51.4-34.4-94.6-62.7-165.3C766.5 262.2 689.3 112 511.5 112 331.7 112 256.2 265.2 261 447.9c-28.4 70.8-46.7 113.7-62.7 165.3-34 109.5-23 154.8-14.6 155.8 18 2.2 70.1-82.4 70.1-82.4 0 49 25.2 112.9 79.8 159-26.4 8.1-85.7 29.9-71.6 53.8 11.4 19.3 196.2 12.3 249.5 6.3 53.3 6 238.1 13 249.5-6.3 14.1-23.8-45.3-45.7-71.6-53.8 54.6-46.2 79.8-110.1 79.8-159 0 0 52.1 84.6 70.1 82.4 8.5-1.1 19.5-46.4-14.5-155.8z" p-id="7981"></path>
-          </svg>
-        </el-button>
-      </div>
+        <div class="social-login">
+          <el-button circle size="large" type="success" @click="handleSocialLogin('wechat')">
+            <svg t="1753868751557" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7010" width="24" height="24" fill="currentColor">
+              <path d="M664.250054 368.541681c10.015098 0 19.892049 0.732687 29.67281 1.795902-26.647917-122.810047-159.358451-214.077703-310.826188-214.077703-169.353083 0-308.085774 114.232694-308.085774 259.274068 0 83.708494 46.165436 152.460344 123.281791 205.78483l-30.80868 91.730191 107.688651-53.455469c38.558178 7.53665 69.459978 15.308661 107.924012 15.308661 9.66308 0 19.230993-0.470721 28.752858-1.225921-6.025227-20.36584-9.521864-41.723264-9.521864-63.862493C402.328693 476.632491 517.908058 368.541681 664.250054 368.541681zM498.62897 285.87389c23.200398 0 38.557154 15.120372 38.557154 38.061874 0 22.846334-15.356756 38.156018-38.557154 38.156018-23.107277 0-46.260603-15.309684-46.260603-38.156018C452.368366 300.994262 475.522716 285.87389 498.62897 285.87389zM283.016307 362.090758c-23.107277 0-46.402843-15.309684-46.402843-38.156018 0-22.941502 23.295566-38.061874 46.402843-38.061874 23.081695 0 38.46301 15.120372 38.46301 38.061874C321.479317 346.782098 306.098002 362.090758 283.016307 362.090758zM945.448458 606.151333c0-121.888048-123.258255-221.236753-261.683954-221.236753-146.57838 0-262.015505 99.348706-262.015505 221.236753 0 122.06508 115.437126 221.200938 262.015505 221.200938 30.66644 0 61.617359-7.609305 92.423993-15.262612l84.513836 45.786813-23.178909-76.17082C899.379213 735.776599 945.448458 674.90216 945.448458 606.151333zM598.803483 567.994292c-15.332197 0-30.807656-15.096836-30.807656-30.501688 0-15.190981 15.47546-30.477129 30.807656-30.477129 23.295566 0 38.558178 15.286148 38.558178 30.477129C637.361661 552.897456 622.099049 567.994292 598.803483 567.994292zM768.25071 567.994292c-15.213493 0-30.594809-15.096836-30.594809-30.501688 0-15.190981 15.381315-30.477129 30.594809-30.477129 23.107277 0 38.558178 15.286148 38.558178 30.477129C806.808888 552.897456 791.357987 567.994292 768.25071 567.994292z" p-id="7011"></path>
+            </svg>
+          </el-button>
+          <el-button circle size="large" type="default" @click="handleSocialLogin('QQ')">
+            <svg t="1753868771769" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7980" width="24" height="24" fill="currentColor">
+              <path d="M824.8 613.2c-16-51.4-34.4-94.6-62.7-165.3C766.5 262.2 689.3 112 511.5 112 331.7 112 256.2 265.2 261 447.9c-28.4 70.8-46.7 113.7-62.7 165.3-34 109.5-23 154.8-14.6 155.8 18 2.2 70.1-82.4 70.1-82.4 0 49 25.2 112.9 79.8 159-26.4 8.1-85.7 29.9-71.6 53.8 11.4 19.3 196.2 12.3 249.5 6.3 53.3 6 238.1 13 249.5-6.3 14.1-23.8-45.3-45.7-71.6-53.8 54.6-46.2 79.8-110.1 79.8-159 0 0 52.1 84.6 70.1 82.4 8.5-1.1 19.5-46.4-14.5-155.8z" p-id="7981"></path>
+            </svg>
+          </el-button>
+        </div>
       </el-form>
     </el-card>
     
@@ -114,38 +117,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
 import { ElForm, ElFormItem, ElInput, ElButton, ElCheckbox, ElLink, ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from "axios";
+import CryptoJS from 'crypto-js';
 
 // 导入所有壁纸图片
-const wallpapers = import.meta.glob('@/assets/wallpapers/*.{jpg,png,jpeg}', { eager: true })
+const wallpapers = import.meta.glob('@/assets/wallpapers/*.{jpg,png,jpeg}', { eager: true });
 
 // 提取图片路径数组
-const wallpaperPaths = Object.values(wallpapers).map((module: any) => module.default)
+const wallpaperPaths = Object.values(wallpapers).map((module: any) => module.default);
 
 // 随机选择一张图片
 const randomWallpaper = wallpaperPaths.length 
   ? wallpaperPaths[Math.floor(Math.random() * wallpaperPaths.length)]
-  : ''
+  : '';
 
 // 视差效果相关
 const bgX = ref(0);
 const bgY = ref(0);
-const parallaxFactor = 20; // 视差因子，值越大效果越明显
+const parallaxFactor = 20;
 
-// 处理鼠标移动事件，实现视差效果
 const handleMouseMove = (e: MouseEvent) => {
-  // 获取窗口尺寸
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
-  
-  // 计算鼠标在窗口中的相对位置（-0.5 到 0.5 之间）
   const mouseX = (e.clientX / windowWidth) - 0.5;
   const mouseY = (e.clientY / windowHeight) - 0.5;
-  
-  // 计算背景图偏移量
   bgX.value = mouseX * parallaxFactor;
   bgY.value = mouseY * parallaxFactor;
 };
@@ -174,6 +172,7 @@ const captchaText = ref<string>('1234');
 const showPassword = ref<boolean>(false);
 const rememberMe = ref<boolean>(false);
 const loginLoading = ref<boolean>(false);
+const hasSavedPassword = ref<boolean>(false);
 
 // 路由实例
 const router = useRouter();
@@ -194,9 +193,24 @@ const loginRules = {
   ]
 };
 
+// 加密密码
+const encryptPassword = (password: string, key: string) => {
+  return CryptoJS.AES.encrypt(password, key).toString();
+};
+
+// 解密密码
+const decryptPassword = (encryptedPassword: string, key: string) => {
+  try {
+    const bytes = CryptoJS.AES.decrypt(encryptedPassword, key);
+    return bytes.toString(CryptoJS.enc.Utf8);
+  } catch (error) {
+    console.error('解密失败:', error);
+    return '';
+  }
+};
+
 // 刷新验证码
 const refreshCaptcha = () => {
-  // 生成4位随机验证码
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let result = '';
   for (let i = 0; i < 4; i++) {
@@ -206,53 +220,72 @@ const refreshCaptcha = () => {
 };
 
 // 处理登录
-const handleLogin = async () => {
+const handleLogin = async (event?: Event) => {
   if (loginLoading.value) return;
   if (!loginFormRef.value) return;
   
   try {
-    // 表单验证
-    await loginFormRef.value.validate();
+    let validateFields = ['suName', 'suPwd'];
+    if (!rememberMe.value || !hasSavedPassword.value) {
+      validateFields.push('captcha');
+    }
     
-    // 显示加载状态
+    await loginFormRef.value.validateField(validateFields);
+    
     loginLoading.value = true;
     
-    // 发送登录请求
+    const loginParams: Partial<LoginForm> = {
+      suName: loginForm.suName,
+      suPwd: loginForm.suPwd
+    };
+    
+    if (!rememberMe.value || !hasSavedPassword.value) {
+      loginParams.captcha = loginForm.captcha;
+      if (loginParams.captcha.toUpperCase() !== captchaText.value) {
+        ElMessage.error('验证码不正确');
+        loginLoading.value = false;
+        refreshCaptcha();
+        return;
+      }
+    }
+    
     axios({
       method: "get",
       url: "http://localhost:8080/sysUser/login",
-      params: loginForm
+      params: loginParams
     }).then((res) => {
-      if(res.data.code == 0){
+      if (res.data.code == 0) {
         ElMessage.success('登录成功');
-        // 存储用户信息
-        localStorage.setItem('suName', res.data.data[0].suName)
-        localStorage.setItem('suId', res.data.data[0].suId)
-        localStorage.setItem('suRole', res.data.data[0].suRole)
+        localStorage.setItem('suName', res.data.data[0].suName);
+        localStorage.setItem('suId', res.data.data[0].suId);
+        localStorage.setItem('suRole', res.data.data[0].suRole);
         
-        // 记住密码逻辑
         if (rememberMe.value) {
           localStorage.setItem('username', loginForm.suName);
-          // 实际项目中密码需要加密存储
-          localStorage.setItem('password', loginForm.suPwd);
+          // 加密密码，使用用户名作为密钥（可加盐）
+          const encryptedPwd = encryptPassword(loginForm.suPwd, loginForm.suName + '_salt');
+          localStorage.setItem('encryptedPassword', encryptedPwd);
+          hasSavedPassword.value = true;
         } else {
           localStorage.removeItem('username');
-          localStorage.removeItem('password');
+          localStorage.removeItem('encryptedPassword');
+          hasSavedPassword.value = false;
         }
         
-        // 跳转到首页
         router.push('/');
       } else {
         ElMessage.error('登录失败: ' + (res.data.msg || '用户名或密码错误'));
-        // 登录失败时刷新验证码
-        refreshCaptcha();
+        if (!rememberMe.value || !hasSavedPassword.value) {
+          refreshCaptcha();
+        }
       }
     }).catch(error => {
       console.error('登录请求失败:', error);
       ElMessage.error('登录请求失败，请稍后重试');
-      refreshCaptcha();
+      if (!rememberMe.value || !hasSavedPassword.value) {
+        refreshCaptcha();
+      }
     }).finally(() => {
-      // 隐藏加载状态
       loginLoading.value = false;
     });
   } catch (error) {
@@ -265,10 +298,9 @@ const handleLogin = async () => {
 // 处理忘记密码
 const handleForgotPassword = () => {
   ElMessage.info('即将跳转到密码重置页面');
-  // 实际项目中这里会跳转到密码重置页面
-  // router.push('/forgot-password');
 };
 
+// 社交登录
 const handleSocialLogin = (type: string) => {
   if (type === 'wechat') {
     window.location.href = 'https://wx.qq.com/';
@@ -277,37 +309,29 @@ const handleSocialLogin = (type: string) => {
   }
 };
 
-// 花瓣飘落效果相关
+// 花瓣飘落效果
 const petalsContainer = ref<HTMLDivElement | null>(null);
 let animationFrameId: number;
 let petals: HTMLDivElement[] = [];
-const totalPetals = 30; // 花瓣总数
+const totalPetals = 30;
 
-// 创建花瓣元素
 const createPetal = () => {
   const petal = document.createElement('div');
   petal.className = 'petal';
-  
-  // 花瓣SVG
   const petalSvg = `
     <svg t="1753879677902" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5228" width="${Math.random() * 40 + 30}" height="${Math.random() * 40 + 30}">
       <path d="M501.7 643.8c-7.5 1.4-52.9 45-67.8 38.6-13.1-5 7.5-50.4-3.7-65.4-11.2-15-97.2 0.5-129.5 15.5-31.8 15-83.7 55.9-101.9 110.4-17.7 53.6-15.9 111.8 15.9 137.7 31.8 26.4 78.5 2.7 78.5 2.7s0.4 65 43.5 74.1c42.1 9.1 125.7-13.2 167.3-77.3 41.6-63.6 30.9-165 23.4-198.1-7.9-33.7-18.2-39.6-25.7-38.2z m371.2-19.1c-53.8-44.6-222.5-79.5-247.8-62.7-25.7 17.2 15.4 58.6 2.3 65.4-12.2 7.3-44.9-27.7-57.5-23.2-12.1 5-29.9 103.2-6.1 163.6 23.9 60.9 113.6 153.2 174.4 126.4 60.8-26.8 52.8-74.5 52.8-74.5s82.7 18.2 113.1-31.8c31.5-49.6 10.9-128.2-31.2-163.2zM585.4 443.4c10.8 8.1 51.4-9.6 61.7 0.4 9.8 10.4-53.3 41.4-34.1 65 19.2 22.7 175.3 38.1 241.2 13.2 59.4-22.3 112.7-78.6 101.9-146.8-9.3-56.8-93-71.8-93-71.8s21-62.3-28.1-85.9c-86.5-42.3-150 27.3-190.2 90.5-36 55.9-70.2 127.7-59.4 135.4zM521.8 66.2c-59.8-14.1-105.2 63.2-105.2 63.2s-59.8-10.4-99.1 25.5c-48.2 43.2-37.9 106.3 8.9 165.9 41.6 52.3 108.5 95.5 120.2 90 11.7-5.9 10.8-48.1 23.8-52.2 14-4.6 21 61.4 51 54.1 29.9-7.3 105.2-135.4 106.2-202.2 1.8-59.8-33.3-127.5-105.8-144.3zM250.7 623.4c66.9-18.7 150-42.7 150.5-65.5 0.5-21.8-70.1-34.1-64.1-60.4 3.7-13.2 72-2.8 76.7-31.4 4.2-21.8-48.6-81.8-116.4-114.5-56.6-27.3-149.1-42.7-189.8 15-34.1 48.2 0.4 101.3 0.4 101.3s-59.3 45-42.5 94.1c19.6 59.1 109.4 82.7 185.2 61.4z m0 0" fill="#d4237a" p-id="5229"></path>
     </svg>
   `;
-  
   petal.innerHTML = petalSvg;
-  
-  // 随机位置和动画属性
-  const size = Math.random() * 120 + 80; // 10-25px
+  const size = Math.random() * 120 + 80;
   const startPosX = Math.random() * window.innerWidth;
   const startPosY = -size;
-  const duration = Math.random() * 10 + 10; // 10-20秒
-  const delay = Math.random() * 10; // 0-10秒延迟
+  const duration = Math.random() * 10 + 10;
+  const delay = Math.random() * 10;
   const rotation = Math.random() * 360;
-  const rotationSpeed = Math.random() * 120 - 60; // -5到5度/秒
-  const sway = Math.random() * 50 + 20; // 摇摆幅度 20-70px
-  
-  // 设置初始样式
+  const rotationSpeed = Math.random() * 120 - 60;
+  const sway = Math.random() * 50 + 20;
   petal.style.cssText = `
     position: absolute;
     top: ${startPosY}px;
@@ -316,8 +340,6 @@ const createPetal = () => {
     z-index: 0;
     pointer-events: none;
   `;
-  
-  // 添加动画
   const animation = petal.animate(
     [
       { 
@@ -336,25 +358,17 @@ const createPetal = () => {
       easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
     }
   );
-  
-  // 存储动画以便后续清除
   (petal as any).animation = animation;
-  
   return petal;
 };
 
-// 初始化花瓣
 const initPetals = () => {
   if (!petalsContainer.value) return;
-  
-  // 清除现有花瓣
   petals.forEach(petal => {
     (petal as any).animation.cancel();
     petal.remove();
   });
   petals = [];
-  
-  // 创建新花瓣
   for (let i = 0; i < totalPetals; i++) {
     const petal = createPetal();
     petalsContainer.value.appendChild(petal);
@@ -362,28 +376,27 @@ const initPetals = () => {
   }
 };
 
-// 页面加载时初始化
 onMounted(() => {
   const savedUsername = localStorage.getItem('username');
-  const savedPassword = localStorage.getItem('password');
-  
-  if (savedUsername && savedPassword) {
+  const encryptedPassword = localStorage.getItem('encryptedPassword');
+  if (savedUsername && encryptedPassword) {
     loginForm.suName = savedUsername;
-    loginForm.suPwd = savedPassword;
+    // 解密密码
+    loginForm.suPwd = decryptPassword(encryptedPassword, savedUsername + '_salt');
     rememberMe.value = true;
+    hasSavedPassword.value = true;
   }
-  
-  // 初始生成验证码
   refreshCaptcha();
-  
-  // 初始化花瓣效果
   initPetals();
-  
-  // 窗口大小改变时重新初始化花瓣
   window.addEventListener('resize', initPetals);
 });
 
-// 组件卸载时清理
+watch(rememberMe, (newVal) => {
+  if (!newVal) {
+    hasSavedPassword.value = false;
+  }
+});
+
 onUnmounted(() => {
   window.removeEventListener('resize', initPetals);
   petals.forEach(petal => {
@@ -407,11 +420,10 @@ onUnmounted(() => {
   background-repeat: no-repeat;
   background-attachment: fixed;
   transition: background-position 0.1s ease-out;
-  position: relative; /* 添加相对定位 */
-  overflow: hidden; /* 隐藏超出容器的花瓣 */
+  position: relative;
+  overflow: hidden;
 }
 
-/* 背景遮罩层 */
 .login-container::before {
   content: '';
   position: absolute;
@@ -423,14 +435,13 @@ onUnmounted(() => {
   z-index: 0;
 }
 
-/* 花瓣容器 */
 .petals-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* 让鼠标事件穿透花瓣容器 */
+  pointer-events: none;
   z-index: 0;
 }
 
@@ -442,7 +453,7 @@ onUnmounted(() => {
   overflow: hidden;
   background-color: rgba(255, 255, 255, 0.5);
   position: relative;
-  z-index: 1; /* 确保卡片在花瓣上方 */
+  z-index: 1;
 }
 
 .login-header {
@@ -529,7 +540,6 @@ onUnmounted(() => {
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
-/* 验证码样式 */
 .captcha-container {
   display: flex;
   align-items: center;
