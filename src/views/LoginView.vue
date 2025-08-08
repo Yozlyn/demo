@@ -10,7 +10,7 @@
     <!-- 登录卡片 -->
     <el-card class="login-card" shadow="hover">
       <div class="login-header">
-        <h2 class="login-title">学子通教育装备商城登录</h2>
+        <h2 class="login-title">学子通教育装备商城</h2>
         <p class="login-desc">请输入账号信息</p>
       </div>
       
@@ -185,7 +185,7 @@ const loginRules = {
   ],
   suPwd: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+    { min: 4, max: 20, message: '密码长度在 4 到 20 个字符', trigger: 'blur' }
   ],
   captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur' },

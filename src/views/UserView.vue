@@ -1,14 +1,17 @@
 <template>
-  <!-- 面包屑导航 -->
-  <el-breadcrumb :separator-icon="ArrowRight" style="margin-bottom: 10px;">
-    <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-    <el-breadcrumb-item>销售模块</el-breadcrumb-item>
-    <el-breadcrumb-item>用户管理</el-breadcrumb-item>
-  </el-breadcrumb>
+  <!-- 面包屑导航与新增按钮在同一行 -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <el-breadcrumb :separator="'>'" style="display: flex; align-items: center;">
+      <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+      <el-breadcrumb-item :to="{ path: '/sales' }">销售模块</el-breadcrumb-item>
+      <el-breadcrumb-item :to="{ path: '/user' }">用户管理</el-breadcrumb-item>
+    </el-breadcrumb>
+    <!-- 新增按钮 -->
+    <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+  </div>
 
-  <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
   <el-table :data="state.tableData" style="width: 100%" border stripe>
-    <!-- 前端计算序号，替代原有的suId显示 -->
+    <!-- 前端计算序号 -->
     <el-table-column fixed label="编号" width="150">
       <template #default="scope">
         {{ (state.pageNum - 1) * state.pageSize + scope.$index + 1 }}
@@ -20,27 +23,43 @@
     <el-table-column fixed="right" label="操作" min-width="120">
       <template #default="scope">
         <el-tooltip content="编辑" placement="top">
-          <el-button type="text" :icon="Edit" @click="handleEdit(scope.row)"></el-button>
+          <!-- 编辑按钮 -->
+          <el-button 
+            :icon="Edit" 
+            size="small" 
+            type="primary" 
+            @click="handleEdit(scope.row)"
+            class="edit-btn"
+          />
         </el-tooltip>
         <el-tooltip content="删除" placement="top">
-          <el-button type="text" class="delete-action" :icon="Delete" @click="handleDelete(scope.row)"></el-button>
+          <!-- 删除按钮 -->
+          <el-button 
+            :icon="Delete" 
+            size="small" 
+            type="primary" 
+            @click="handleDelete(scope.row)"
+            class="delete-btn"
+          />
         </el-tooltip>
       </template>
     </el-table-column>
   </el-table>
+
   <!-- 分页工具栏 -->
-  <el-pagination
-    background
-    layout="prev, pager, next"
-    :total="state.total"
-    :page-size="state.pageSize"
-    @current-change="refreshData"
-    style="margin-top: 10px; text-align: right"
-  />
+  <div style="position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10;">
+    <el-pagination
+      background
+      layout="prev, pager, next"
+      :total="state.total"
+      :page-size="state.pageSize"
+      @current-change="refreshData"
+    ></el-pagination>
+  </div>
 
   <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="500">
     <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
-      <!-- 编辑时显示数据库ID（仅作为标识，不允许修改），新增时隐藏 -->
+      <!-- 编辑时显示数据库ID，新增时隐藏 -->
       <el-form-item 
         label="系统ID" 
         :label-width="state.formLabelWidth" 
@@ -54,8 +73,8 @@
       </el-form-item>
       <el-form-item label="角色" :label-width="state.formLabelWidth" prop="suRole">
         <el-select v-model="state.form.suRole" placeholder="请选择角色">
-          <el-option label="普通用户" value="user" />
-          <el-option label="管理员" value="admin" />
+          <el-option label="普通用户" value="user"></el-option>
+          <el-option label="管理员" value="admin"></el-option> 
         </el-select>
       </el-form-item>
       <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="suTime">
@@ -65,7 +84,7 @@
           value-format="YYYY-MM-DD HH:mm:ss"
           placeholder="请选择日期时间"
           style="width: 100%"
-        />
+        ></el-date-picker>
       </el-form-item>
       <el-form-item label="密码" :label-width="state.formLabelWidth" prop="suPwd">
         <el-input 
@@ -91,22 +110,47 @@
 import { reactive, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from "axios";
-import { ArrowRight } from '@element-plus/icons-vue'
-import { Plus } from '@element-plus/icons-vue'
-import { Edit } from '@element-plus/icons-vue'
-import { Delete } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
+import type { FormInstance } from 'element-plus'
 
-const ruleFormRef = ref()
+// 定义用户数据类型接口
+interface User {
+  suId: string;
+  suName: string;
+  suRole: string;
+  suTime: string;
+  suPwd?: string;
+}
 
-// 定义页面的数据变量对象state
+// 定义表单数据类型
+interface UserForm extends User {}
+
+// 定义分页响应数据类型
+interface PageResponse {
+  code: number;
+  msg?: string;
+  data: User[];
+  count: number;
+}
+
+// 定义通用API响应类型
+interface ApiResponse {
+  code: number;
+  msg?: string;
+  data?: any;
+}
+
+const ruleFormRef = ref<FormInstance>()
+
+// 页面状态管理
 const state = reactive({
   dialogFormVisible: false,
   dialogTitle: '修改用户信息',
-  isEdit: true, // 区分新增和编辑
+  isEdit: true,
   formLabelWidth: "140px",
-  tableData: [],
-  pageNum: 1, //第几页
-  pageSize: 10, //每页有多少行数据
+  tableData: [] as User[],
+  pageNum: 1,
+  pageSize: 10,
   total: 0,
   form: {
     suId: "",
@@ -114,10 +158,10 @@ const state = reactive({
     suRole: "",
     suTime: "",
     suPwd: ""
-  },
+  } as UserForm,
 });
 
-// 校验规则（移除suId的校验，因为前端不维护编号）
+// 表单校验规则
 const rules = reactive({
   suName: [
     { required: true, message: '用户名不能为空', trigger: 'blur' },
@@ -131,24 +175,22 @@ const rules = reactive({
   ],
   suPwd: [
     { 
-      required: () => !state.isEdit, // 新增时必填，编辑时可选
+      required: () => !state.isEdit,
       message: '密码不能为空', 
       trigger: 'blur' 
     },
-    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+    { min: 4, max: 20, message: '密码长度在 4 到 20 个字符', trigger: 'blur' }
   ]
 })
 
-// 获取后台数据
+// 获取用户数据
 const getData = () => {
-  axios({
-    method: "get",
-    url: "http://localhost:8080/sysUser/pageUser",
+  axios.get<PageResponse>("http://localhost:8080/sysUser/pageUser", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
     },
-  }).then((res) => {
+  }).then(res => {
     state.tableData = res.data.data;
     state.total = res.data.count;
   }).catch(err => {
@@ -156,18 +198,17 @@ const getData = () => {
   });
 };
 
-// 页码改变时刷新数据
-const refreshData = (page) => {
+// 刷新分页数据
+const refreshData = (page: number) => {
   state.pageNum = page;
   getData();
 };
 
-// 新增按钮点击事件
+// 新增用户
 const handleAdd = () => {
   state.isEdit = false;
   state.dialogTitle = '新增用户';
   state.dialogFormVisible = true;
-  // 重置表单（清空ID）
   state.form = {
     suId: "",
     suName: "",
@@ -175,53 +216,41 @@ const handleAdd = () => {
     suTime: "",
     suPwd: ""
   };
-  // 重置表单验证
-  if (ruleFormRef.value) {
-    ruleFormRef.value.resetFields();
-  }
+  ruleFormRef.value?.resetFields();
 };
 
-// 编辑按钮点击事件
-const handleEdit = (row) => {
+// 编辑用户
+const handleEdit = (row: User) => {
   state.isEdit = true;
   state.dialogTitle = '修改用户信息';
   state.dialogFormVisible = true;
-  // 回填表单数据（包含ID用于后台识别）
-  state.form = JSON.parse(JSON.stringify(row));
-  // 清空密码（编辑时不显示原密码）
-  state.form.suPwd = '';
+  state.form = { ...row, suPwd: '' };
 };
 
-// 提交表单（新增/编辑）
-const submitForm = async (formEl) => {
+// 提交表单
+const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
+  await formEl.validate();
+  const url = state.isEdit 
+    ? "http://localhost:8080/sysUser/update" 
+    : "http://localhost:8080/sysUser/add";
+  
   try {
-    await formEl.validate();
-    // 校验成功，提交数据
-    const url = state.isEdit 
-      ? "http://localhost:8080/sysUser/update" 
-      : "http://localhost:8080/sysUser/add";
-    
-    const res = await axios({
-      method: "post",
-      url,
-      data: state.form // 使用data传递json数据（对应后端@RequestBody）
-    });
-
+    const res = await axios.post<ApiResponse>(url, state.form);
     if (res.data.code === 0) {
       ElMessage.success(state.isEdit ? '修改成功' : '新增成功');
       state.dialogFormVisible = false;
-      getData(); // 刷新数据
+      getData();
     } else {
       ElMessage.error(res.data.msg || (state.isEdit ? '修改失败' : '新增失败'));
     }
-  } catch (err) {
-    console.log('表单校验失败:', err);
+  } catch (error) {
+    ElMessage.error('提交失败，请稍后重试');
   }
 };
 
-// 删除按钮点击事件
-const handleDelete = (row) => {
+// 删除用户
+const handleDelete = (row: User) => {
   ElMessageBox.confirm(
     `确定要删除用户${row.suName}吗？`,
     '警告',
@@ -232,20 +261,18 @@ const handleDelete = (row) => {
     }
   ).then(async () => {
     try {
-      const res = await axios({
-        method: "post",
-        url: "http://localhost:8080/sysUser/delete",
-        data: { suId: row.suId }
+      const res = await axios.post<ApiResponse>("http://localhost:8080/sysUser/delete", { 
+        suId: row.suId 
       });
       
       if (res.data.code === 0) {
         ElMessage.success('删除成功');
-        getData(); // 刷新数据
+        getData();
       } else {
         ElMessage.error(res.data.msg || '删除失败');
       }
-    } catch (err) {
-      ElMessage.error('删除失败：' + err.message);
+    } catch (error) {
+      ElMessage.error('删除失败，请稍后重试');
     }
   }).catch(() => {
     ElMessage.info('操作已取消');
@@ -253,16 +280,56 @@ const handleDelete = (row) => {
 };
 
 // 页面初始化
-onMounted(() => {
-  getData();
-});
+onMounted(getData);
 </script>
 
 <style scoped>
+/* 面包屑样式 */
+::v-deep .el-breadcrumb {
+  font-size: 14px;
+}
+
+::v-deep .el-breadcrumb__item .el-breadcrumb__inner {
+  font-size: 17px;
+}
+
+::v-deep .el-breadcrumb__separator {
+  font-size: 14px;
+  margin: 0 8px;
+}
+
+/* 表格样式 */
+::v-deep .el-table__inner-wrapper {
+  font-size: 16px !important;
+}
+
+::v-deep .el-table th.el-table__cell > .cell {
+  font-size: 15px !important;
+  font-weight: bold;
+}
+
+::v-deep .el-table td.el-table__cell > .cell {
+  font-size: 14px !important;
+}
+
+/* 圆形按钮样式 */
+.edit-btn {
+  color: #409EFF;
+  background-color: #ecf5ff;
+  margin-right: 8px;
+}
+
+.delete-btn {
+  color: #F56C6C;
+  background-color: #fef0f0;
+}
+
+/* 按钮图标大小 */
+::v-deep .el-button .el-icon {
+  font-size: 16px;
+}
+
 .el-main {
   margin: 10px;
-}
-.delete-action {
-  color: red;
 }
 </style>
