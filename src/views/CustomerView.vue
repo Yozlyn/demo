@@ -1,110 +1,144 @@
 <template>
-  <!-- 面包屑导航与新增按钮在同一行 -->
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-    <el-breadcrumb :separator="'>'" style="display: flex; align-items: center;">
-      <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-      <el-breadcrumb-item :to="{ path: '/user' }">销售模块</el-breadcrumb-item>
-      <el-breadcrumb-item>客户管理</el-breadcrumb-item>
-    </el-breadcrumb>
-    <!-- 新增按钮 -->
-    <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-  </div>
-
-  <el-table :data="state.customerData" style="width: 100%" border stripe v-loading="state.loading">
-    <!-- 前端计算序号 -->
-    <el-table-column fixed label="编号" width="150">
-      <template #default="scope">
-        {{ (state.pageNum - 1) * state.pageSize + scope.$index + 1 }}
-      </template>
-    </el-table-column>
-    <el-table-column prop="customerName" label="客户名称" width="200" />
-    <el-table-column prop="contact" label="联系方式" width="200" />
-    <el-table-column prop="email" label="邮箱" width="200" />
-    <el-table-column prop="createdAt" label="创建时间" />
-    <el-table-column fixed="right" label="操作" min-width="120">
-      <template #default="scope">
-        <el-tooltip content="编辑" placement="top">
-          <!-- 编辑按钮 -->
-          <el-button 
-            :icon="Edit" 
-            size="small" 
-            type="primary" 
-            @click="handleEdit(scope.row)"
-            class="edit-btn"
-          />
-        </el-tooltip>
-        <el-tooltip content="删除" placement="top">
-          <!-- 删除按钮 -->
-          <el-button 
-            :icon="Delete" 
-            size="small" 
-            type="primary" 
-            @click="handleDelete(scope.row)"
-            class="delete-btn"
-          />
-        </el-tooltip>
-      </template>
-    </el-table-column>
-  </el-table>
-
-  <!-- 分页工具栏 -->
-  <div style="position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10;">
-    <el-pagination
-      background
-      layout="prev, pager, next"
-      :total="state.total"
-      :page-size="state.pageSize"
-      @current-change="refreshData"
-    ></el-pagination>
-  </div>
-
-  <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="500">
-    <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
-      <!-- 编辑时显示客户ID（仅作为标识，不允许修改），新增时隐藏 -->
-      <el-form-item 
-        label="客户ID" 
-        :label-width="state.formLabelWidth" 
-        prop="customerId"
-        v-if="state.isEdit"
-      >
-        <el-input v-model="state.form.customerId" autocomplete="off" readonly />
-      </el-form-item>
-      <el-form-item label="客户名称" :label-width="state.formLabelWidth" prop="customerName">
-        <el-input v-model="state.form.customerName" autocomplete="off" />
-      </el-form-item>
-      <el-form-item label="联系方式" :label-width="state.formLabelWidth" prop="contact">
-        <el-input v-model="state.form.contact" autocomplete="off" />
-      </el-form-item>
-      <el-form-item label="邮箱" :label-width="state.formLabelWidth" prop="email">
-        <el-input v-model="state.form.email" autocomplete="off" />
-      </el-form-item>
-      <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="createdAt">
-        <el-date-picker
-          v-model="state.form.createdAt"
-          type="datetime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          placeholder="请选择日期时间"
-          style="width: 100%"
+  <div class="users-container">
+    <!-- 顶部筛选和操作 -->
+    <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div class="search-bar">
+        <el-input
+          v-model="searchQuery"
+          placeholder="请输入客户名称/联系方式/邮箱"  
+          :prefix-icon="Search"
+          size="default"
+          style="width: 250px;"
+          clearable
         />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="state.dialogFormVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm(ruleFormRef)">
-          确认
+      </div>
+      <div>
+        <el-button 
+          class="custom-primary-button" 
+          :icon="Plus" 
+          @click="handleAdd"
+        >
+          新增
+        </el-button>
+        <el-button 
+          class="custom-batch-delete-button" 
+          :icon="Delete"
+          style="margin-left: 10px;" 
+          @click="handleBatchDelete" 
+          :disabled="selectedRows.length === 0"
+        >
+          批量删除
         </el-button>
       </div>
-    </template>
-  </el-dialog>
+    </div>
+
+    <!-- 客户数据表格 -->
+    <el-row>
+      <el-col :span="24">
+        <el-card shadow="hover" class="table-card">
+          <el-table 
+            :data="filteredTableData"
+            style="width: 100%"
+            v-loading="tableLoading"
+            border
+            stripe
+            row-key="customerId"
+            height="calc(100vh - 280px)" 
+            @selection-change="handleSelectionChange"
+          >
+            <el-table-column type="selection" width="50" />
+            <el-table-column type="index" label="编号" width="60" />
+            <el-table-column prop="customerName" label="客户名称" min-width="180" />
+            <el-table-column prop="contact" label="联系方式" width="150" />
+            <el-table-column prop="email" label="邮箱" min-width="200" />
+            <el-table-column prop="createdAt" label="创建时间" width="180" />
+            <el-table-column fixed="right" label="操作" width="140">
+              <template #default="scope">
+                <el-tooltip content="编辑" placement="top">
+                  <el-button 
+                    :icon="Edit" 
+                    size="default"
+                    class="custom-edit-button"
+                    @click="handleEdit(scope.row)"
+                    style="margin-right: 8px;"
+                  />
+                </el-tooltip>
+                <el-tooltip content="删除" placement="top">
+                  <el-button 
+                    :icon="Delete" 
+                    size="default"
+                    class="custom-delete-button"
+                    @click="handleDelete(scope.row)"
+                  />
+                </el-tooltip>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 分页 -->
+          <div class="pagination-container">
+            <el-pagination
+              v-model:current-page="state.pageNum"
+              v-model:page-size="state.pageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              :total="state.total"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="handleSizeChange"
+              @current-change="refreshData"
+            />
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 表单弹窗 -->
+    <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="600">
+      <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
+        <el-form-item 
+          label="客户ID" 
+          :label-width="state.formLabelWidth" 
+          prop="customerId"
+          v-if="state.isEdit"
+        >
+          <el-input v-model="state.form.customerId" autocomplete="off" readonly />
+        </el-form-item>
+        <el-form-item label="客户名称" :label-width="state.formLabelWidth" prop="customerName">
+          <el-input v-model="state.form.customerName" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="联系方式" :label-width="state.formLabelWidth" prop="contact">
+          <el-input v-model="state.form.contact" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="邮箱" :label-width="state.formLabelWidth" prop="email">
+          <el-input v-model="state.form.email" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="createdAt">
+          <el-date-picker
+            v-model="state.form.createdAt"
+            type="datetime"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="请选择日期时间"
+            style="width: 100%"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="state.dialogFormVisible = false">取消</el-button>
+          <el-button class="custom-edit-button" @click="submitForm(ruleFormRef)">
+            确认
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted, ref } from "vue";
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { reactive, onMounted, ref, computed } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import axios from "axios";
-import { Plus, Edit, Delete } from '@element-plus/icons-vue';
-import type { FormInstance } from 'element-plus'
+import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
+import type { FormInstance } from "element-plus";
 
 // 定义客户数据类型接口
 interface Customer {
@@ -133,95 +167,103 @@ interface ApiResponse {
   data?: any;
 }
 
-const ruleFormRef = ref<FormInstance>()
+const ruleFormRef = ref<FormInstance>();
+const tableLoading = ref(false);
+const searchQuery = ref("");
+const selectedRows = ref<Customer[]>([]);
 
-// 定义页面的数据变量对象
+// 页面状态管理
 const state = reactive({
   dialogFormVisible: false,
-  dialogTitle: '修改客户信息',
-  isEdit: true, // 区分新增和编辑
+  dialogTitle: "修改客户信息",
+  isEdit: true,
   formLabelWidth: "140px",
-  customerData: [] as Customer[],
-  pageNum: 1, // 第几页
-  pageSize: 15, // 每页多少行数据
+  tableData: [] as Customer[],
+  pageNum: 1,
+  pageSize: 10,
   total: 0,
-  loading: false,
   form: {
     customerId: "",
     customerName: "",
     contact: "",
     email: "",
-    createdAt: ""
+    createdAt: "",
   } as CustomerForm,
 });
 
-// 校验规则
+// 表单校验规则
 const rules = reactive({
   customerName: [
-    { required: true, message: '客户名称不能为空', trigger: 'blur' },
-    { min: 2, max: 100, message: '长度在 2 到 100 个字符', trigger: 'blur' }
+    { required: true, message: "客户名称不能为空", trigger: "blur" },
+    { min: 2, max: 100, message: "长度在 2 到 100 个字符", trigger: "blur" },
   ],
   contact: [
-    { required: false, message: '请输入联系方式', trigger: 'blur' }
+    { required: false, message: "请输入联系方式", trigger: "blur" },
   ],
   email: [
-    { type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change'] }
+    { type: "email", message: "请输入有效的邮箱地址", trigger: ["blur", "change"] },
   ],
   createdAt: [
-    { required: true, message: '创建时间不能为空', trigger: 'blur' }
-  ]
+    { required: true, message: "创建时间不能为空", trigger: "blur" },
+  ],
 });
 
-// 获取后台数据
-const getCustomerData = () => {
-  state.loading = true;
+// 过滤数据
+const filteredTableData = computed(() => {
+  return state.tableData.filter(item => {
+    const searchMatch = item.customerName.includes(searchQuery.value) || 
+                       item.contact.includes(searchQuery.value) ||
+                       item.email.includes(searchQuery.value);
+    return searchMatch;
+  });
+});
+
+// 获取客户数据
+const getData = () => {
+  tableLoading.value = true;
   axios.get<PageResponse>("http://localhost:8080/customer/pageCustomers", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
     },
   }).then(res => {
-    state.customerData = res.data.data;
+    state.tableData = res.data.data;
     state.total = res.data.count;
-    state.loading = false;
   }).catch(err => {
-    state.loading = false;
-    ElMessage.error('获取数据失败：' + err.message);
+    ElMessage.error("获取数据失败：" + err.message);
+  }).finally(() => {
+    tableLoading.value = false;
   });
 };
 
-// 页码改变时刷新数据
-const refreshData = (page: number) => {
-  state.pageNum = page;
-  getCustomerData();
-};
+// 分页相关函数
+const refreshData = (page: number) => { state.pageNum = page; getData(); };
+const handleSizeChange = (size: number) => { state.pageSize = size; getData(); };
 
-// 新增按钮点击事件
+// 新增客户
 const handleAdd = () => {
   state.isEdit = false;
-  state.dialogTitle = '新增客户';
+  state.dialogTitle = "新增客户";
   state.dialogFormVisible = true;
-  // 重置表单
   state.form = {
     customerId: "",
     customerName: "",
     contact: "",
     email: "",
-    createdAt: ""
+    createdAt: "",
   };
   ruleFormRef.value?.resetFields();
 };
 
-// 编辑按钮点击事件
+// 编辑客户
 const handleEdit = (row: Customer) => {
   state.isEdit = true;
-  state.dialogTitle = '修改客户信息';
+  state.dialogTitle = "修改客户信息";
   state.dialogFormVisible = true;
-  // 回填表单数据
   state.form = { ...row };
 };
 
-// 提交表单（新增/编辑）
+// 提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
@@ -232,26 +274,26 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
     if (res.data.code === 0) {
-      ElMessage.success(state.isEdit ? '修改成功' : '新增成功');
+      ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
       state.dialogFormVisible = false;
-      getCustomerData(); // 刷新数据
+      getData();
     } else {
-      ElMessage.error(res.data.msg || (state.isEdit ? '修改失败' : '新增失败'));
+      ElMessage.error(res.data.msg || (state.isEdit ? "修改失败" : "新增失败"));
     }
   } catch (error) {
-    ElMessage.error('提交失败，请稍后重试');
+    ElMessage.error("提交失败，请稍后重试");
   }
 };
 
-// 删除按钮点击事件
+// 删除客户
 const handleDelete = (row: Customer) => {
   ElMessageBox.confirm(
     `确定要删除客户 ${row.customerName} 吗？`,
-    '警告',
+    "警告",
     {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
     }
   ).then(async () => {
     try {
@@ -260,70 +302,172 @@ const handleDelete = (row: Customer) => {
       });
       
       if (res.data.code === 0) {
-        ElMessage.success('删除成功');
-        getCustomerData();
+        ElMessage.success("删除成功");
+        getData();
       } else {
-        ElMessage.error(res.data.msg || '删除失败');
+        ElMessage.error(res.data.msg || "删除失败");
       }
     } catch (error) {
-      ElMessage.error('删除失败，请稍后重试');
+      ElMessage.error("删除失败，请稍后重试");
     }
   }).catch(() => {
-    ElMessage.info('操作已取消');
+    ElMessage.info("操作已取消");
   });
 };
 
+// 表格选择和批量删除
+const handleSelectionChange = (val: Customer[]) => { selectedRows.value = val; };
+
+const handleBatchDelete = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning("请先选择要删除的客户");
+    return;
+  }
+  
+  ElMessageBox.confirm(`确定要删除${selectedRows.value.length}个选中的客户吗？`, "警告", {
+    confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
+  }).then(async () => {
+    try {
+      const customerIds = selectedRows.value.map(row => row.customerId);
+      const res = await axios.post<ApiResponse>("http://localhost:8080/customer/batchDelete", { customerIds });
+      if (res.data.code === 0) {
+        ElMessage.success(`成功删除${selectedRows.value.length}个客户`);
+        selectedRows.value = [];
+        getData();
+      } else {
+        ElMessage.error(res.data.msg || "批量删除失败");
+      }
+    } catch (error) {
+      ElMessage.error("批量删除失败，请稍后重试");
+    }
+  }).catch(() => ElMessage.info("操作已取消"));
+};
+
 // 页面初始化
-onMounted(getCustomerData);
+onMounted(getData);
 </script>
 
 <style scoped>
-/* 面包屑样式 */
-::v-deep .el-breadcrumb {
-  font-size: 14px;
+.users-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-::v-deep .el-breadcrumb__item .el-breadcrumb__inner {
-  font-size: 17px;
+.header-actions {
+  background-color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-::v-deep .el-breadcrumb__separator {
-  font-size: 14px;
-  margin: 0 8px;
+.table-card {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex-grow: 1;
+}
+
+.table-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.el-table th {
+  background-color: #f5f7fa;
+  font-weight: 500;
+  color: #606266;
+}
+
+.el-table td {
+  padding: 6px;
+}
+
+.el-table .cell {
+  line-height: 1.5;
 }
 
 /* 表格样式 */
-::v-deep .el-table__inner-wrapper {
-  font-size: 16px !important;
+.el-table {
+  background-color: #fff;
+  border-radius: 8px;
 }
 
-::v-deep .el-table th.el-table__cell > .cell {
-  font-size: 15px !important;
-  font-weight: bold;
+/* 禁用表格内部滚动，让滚动事件传递到页面 */
+.el-table .el-table__body-wrapper {
+  overflow: hidden !important;
 }
 
-::v-deep .el-table td.el-table__cell > .cell {
-  font-size: 14px !important;
+.el-table__body-wrapper::-webkit-scrollbar {
+  display: none !important;
 }
 
-/* 圆形按钮样式 */
-.edit-btn {
-  color: #409EFF;
+.table-card .el-card__body {
+  padding: 0;
+  overflow: visible;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 10px 0;
+  background-color: #fff;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 统一按钮样式 */
+.custom-primary-button,
+.custom-batch-delete-button,
+.custom-edit-button {
   background-color: #ecf5ff;
-  margin-right: 8px;
+  border-color: #d9ecff;
+  color: #409eff;
 }
 
-.delete-btn {
-  color: #F56C6C;
-  background-color: #fef0f0;
+.custom-primary-button:hover,
+.custom-batch-delete-button:hover,
+.custom-edit-button:hover {
+  background-color: #c6e2ff;
+  border-color: #b3d8ff;
 }
 
-/* 按钮图标大小 */
-::v-deep .el-button .el-icon {
-  font-size: 16px;
+.custom-batch-delete-button {
+  border-color: #79bbff;
 }
 
-.el-main {
-  margin: 10px;
+.custom-batch-delete-button:hover {
+  background-color: #b3d8ff;
+  border-color: #66b1ff;
+}
+
+.custom-batch-delete-button:disabled {
+  background-color: #f5f7fa;
+  border-color: #dfe4ed;
+  color: #c0c4cc;
+}
+
+.custom-delete-button {
+  background-color: #fde2e2;
+  border-color: #fab6b6;
+  color: #f56c6c;
+}
+
+.custom-delete-button:hover {
+  background-color: #f8c7c7;
+  border-color: #f89898;
+}
+
+@media (max-width: 768px) {
+  .users-container {
+    padding: 16px;
+  }
+  .header-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
 }
 </style>
+

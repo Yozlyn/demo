@@ -1,15 +1,8 @@
 <template>
-  <div class="sales-container">
-    <!-- 面包屑导航 -->
-    <div class="breadcrumb-header">
-      <el-breadcrumb separator=">">
-        <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
-      </el-breadcrumb>
-    </div>
-
-    <!-- 销售概览卡片 -->
-    <el-row :gutter="20" class="sales-overview">
-      <el-col :xs="24" :sm="12" :md="6" v-for="(item, index) in salesOverview" :key="index">
+  <div class="dashboard-container">
+    <!-- 概览卡片 -->
+    <el-row :gutter="20" class="overview-cards">
+      <el-col :xs="24" :sm="12" :md="6" v-for="(item, index) in overviewData" :key="index">
         <el-card shadow="hover" class="overview-card" :class="item.type">
           <div class="overview-content">
             <div class="overview-icon">
@@ -30,14 +23,14 @@
       </el-col>
     </el-row>
 
-    <!-- 销售图表和筛选 -->
+    <!-- 图表和排行 -->
     <el-row :gutter="20" style="margin-top: 20px;">
-      <!-- 销售趋势图 -->
+      <!-- 趋势图 -->
       <el-col :xs="24" :lg="16">
         <el-card shadow="hover" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="card-title">销售趋势分析</span>
+              <span class="card-title">数据趋势分析</span>
               <div class="chart-controls">
                 <el-select v-model="chartType" size="small" @change="updateChart">
                   <el-option label="销售额" value="amount"></el-option>
@@ -53,18 +46,18 @@
               </div>
             </div>
           </template>
-          <div class="chart-container" ref="salesChartContainer">
-            <canvas ref="salesChart" width="100%" height="350"></canvas>
+          <div class="chart-container" ref="mainChartContainer">
+            <canvas ref="mainChart" width="100%" height="350"></canvas>
           </div>
         </el-card>
       </el-col>
 
-      <!-- 销售排行 -->
+      <!-- 排行榜 -->
       <el-col :xs="24" :lg="8">
         <el-card shadow="hover" class="ranking-card">
           <template #header>
             <div class="card-header">
-              <span class="card-title">销售排行榜</span>
+              <span class="card-title">排行榜</span>
               <el-select v-model="rankingType" size="small" @change="updateRanking">
                 <el-option label="商品" value="product"></el-option>
                 <el-option label="分类" value="category"></el-option>
@@ -89,17 +82,17 @@
       </el-col>
     </el-row>
 
-    <!-- 销售数据表格 -->
+    <!-- 数据表格 -->
     <el-row style="margin-top: 20px;">
       <el-col :span="24">
         <el-card shadow="hover" class="table-card">
           <template #header>
             <div class="card-header">
-              <span class="card-title">销售数据详情</span>
+              <span class="card-title">数据详情</span>
               <div class="table-controls">
                 <el-input
                   v-model="searchQuery"
-                  placeholder="搜索订单号、客户名称..."
+                  placeholder="搜索..."
                   prefix-icon="Search"
                   size="small"
                   style="width: 250px; margin-right: 10px;"
@@ -124,7 +117,7 @@
           </template>
           
           <el-table 
-            :data="salesData" 
+            :data="tableData" 
             style="width: 100%" 
             v-loading="tableLoading"
             border
@@ -132,36 +125,13 @@
             height="400"
           >
             <el-table-column type="index" label="序号" width="60" />
-            <el-table-column prop="orderNo" label="订单号" width="140" />
-            <el-table-column prop="customerName" label="客户名称" width="120" />
-            <el-table-column prop="productName" label="商品名称" min-width="200" />
-            <el-table-column prop="quantity" label="数量" width="80" align="center" />
-            <el-table-column prop="unitPrice" label="单价" width="100" align="right">
-              <template #default="scope">
-                ¥{{ scope.row.unitPrice.toFixed(2) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="totalAmount" label="总金额" width="120" align="right">
-              <template #default="scope">
-                ¥{{ scope.row.totalAmount.toFixed(2) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="salesperson" label="销售员" width="100" />
-            <el-table-column prop="orderDate" label="订单日期" width="120" />
-            <el-table-column prop="status" label="状态" width="100">
-              <template #default="scope">
-                <el-tag :type="getStatusType(scope.row.status)" size="small">
-                  {{ getStatusText(scope.row.status) }}
-                </el-tag>
-              </template>
-            </el-table-column>
+            <el-table-column prop="name" label="名称" width="140" />
+            <el-table-column prop="value" label="值" width="120" />
+            <el-table-column prop="date" label="日期" width="120" />
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="scope">
                 <el-button size="small" type="text" @click="viewDetail(scope.row)">
                   查看
-                </el-button>
-                <el-button size="small" type="text" @click="editOrder(scope.row)">
-                  编辑
                 </el-button>
               </template>
             </el-table-column>
@@ -182,67 +152,24 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 销售分析弹窗 -->
-    <el-dialog v-model="analysisDialogVisible" title="销售分析详情" width="80%" top="5vh">
-      <div class="analysis-content">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="analysis-chart">
-              <h4>销售趋势</h4>
-              <canvas ref="analysisChart" width="100%" height="200"></canvas>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="analysis-stats">
-              <h4>统计数据</h4>
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div class="stat-label">总销售额</div>
-                  <div class="stat-value">¥{{ analysisData.totalAmount.toLocaleString() }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">订单数量</div>
-                  <div class="stat-value">{{ analysisData.orderCount }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">平均订单金额</div>
-                  <div class="stat-value">¥{{ analysisData.avgOrderAmount.toFixed(2) }}</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-label">客户数量</div>
-                  <div class="stat-value">{{ analysisData.customerCount }}</div>
-                </div>
-              </div>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted, nextTick } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { ArrowUp, ArrowDown, Download } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { ArrowUp, ArrowDown, Download, ShoppingCart, Money, TrendCharts, User, Search } from '@element-plus/icons-vue';
 import axios from 'axios';
 
-// 定义销售数据的接口
-interface SaleData {
-  orderNo: string;
-  customerName: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  totalAmount: number;
-  salesperson: string;
-  orderDate: string;
-  status: string;
+// 定义数据接口
+interface DashboardData {
+  name: string;
+  value: number;
+  date: string;
 }
 
 // 响应式数据
-const salesOverview = ref([
+const overviewData = ref([
   {
     label: '今日销售额',
     value: 125600,
@@ -280,8 +207,8 @@ const salesOverview = ref([
 // 图表相关
 const chartType = ref('amount');
 const timePeriod = ref('30days');
-const salesChart = ref();
-const salesChartContainer = ref();
+const mainChart = ref();
+const mainChartContainer = ref();
 
 // 排行榜相关
 const rankingType = ref('product');
@@ -294,23 +221,13 @@ const rankingData = ref([
 ]);
 
 // 表格相关
-const salesData = ref<SaleData[]>([]); // 添加类型注解
+const tableData = ref<DashboardData[]>([]); 
 const tableLoading = ref(false);
 const searchQuery = ref('');
 const dateRange = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
-
-// 分析弹窗
-const analysisDialogVisible = ref(false);
-const analysisChart = ref();
-const analysisData = reactive({
-  totalAmount: 0,
-  orderCount: 0,
-  avgOrderAmount: 0,
-  customerCount: 0
-});
 
 // 格式化数值
 const formatValue = (value: number, format: string) => {
@@ -334,42 +251,18 @@ const getRankingClass = (index: number) => {
   return 'normal';
 };
 
-// 获取状态类型
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
-    'pending': 'warning',
-    'confirmed': 'primary',
-    'shipped': 'info',
-    'delivered': 'success',
-    'cancelled': 'danger'
-  };
-  return statusMap[status] || 'info';
-};
-
-// 获取状态文本
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    'pending': '待处理',
-    'confirmed': '已确认',
-    'shipped': '已发货',
-    'delivered': '已送达',
-    'cancelled': '已取消'
-  };
-  return statusMap[status] || status;
-};
-
 // 更新图表
 const updateChart = () => {
   nextTick(() => {
-    drawSalesChart();
+    drawMainChart();
   });
 };
 
-// 绘制销售图表
-const drawSalesChart = () => {
-  if (!salesChart.value) return;
+// 绘制主图表
+const drawMainChart = () => {
+  if (!mainChart.value) return;
   
-  const canvas = salesChart.value;
+  const canvas = mainChart.value;
   const ctx = canvas.getContext('2d');
   
   // 清除画布
@@ -391,14 +284,14 @@ const generateChartData = () => {
   const data = [];
   for (let i = 0; i < days; i++) {
     data.push({
-      date: new Date(Date.now() - (days - i) * 24 * 60 * 60 * 1000),
+      date: new Date(Date.now() - (days - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       value: Math.random() * 10000 + 5000
     });
   }
   return data;
 };
 
-// 绘制折线图
+// 绘制折线图 (通用函数)
 const drawLineChart = (ctx: CanvasRenderingContext2D, data: any[], width: number, height: number) => {
   const padding = 40;
   const chartWidth = width - padding * 2;
@@ -456,66 +349,36 @@ const updateRanking = () => {
 // 处理日期变化
 const handleDateChange = (dates: any) => {
   console.log('日期范围变化:', dates);
-  loadSalesData();
+  loadTableData();
 };
 
 // 处理页面大小变化
 const handleSizeChange = (size: number) => {
   pageSize.value = size;
-  loadSalesData();
+  loadTableData();
 };
 
 // 处理当前页变化
 const handleCurrentChange = (page: number) => {
   currentPage.value = page;
-  loadSalesData();
+  loadTableData();
 };
 
-// 加载销售数据
-const loadSalesData = async () => {
+// 加载表格数据
+const loadTableData = async () => {
   tableLoading.value = true;
   try {
     // 模拟API调用
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // 模拟数据
-    salesData.value = [
-      {
-        orderNo: 'ORD20250101001',
-        customerName: '北京第一中学',
-        productName: '智能投影仪 4K超清版',
-        quantity: 2,
-        unitPrice: 2999.00,
-        totalAmount: 5998.00,
-        salesperson: '张三',
-        orderDate: '2025-01-01',
-        status: 'delivered'
-      },
-      {
-        orderNo: 'ORD20250101002',
-        customerName: '上海实验小学',
-        productName: '电子白板 75寸触控版',
-        quantity: 1,
-        unitPrice: 8999.00,
-        totalAmount: 8999.00,
-        salesperson: '李四',
-        orderDate: '2025-01-01',
-        status: 'shipped'
-      },
-      {
-        orderNo: 'ORD20250101003',
-        customerName: '广州育才中学',
-        productName: '学生平板 10寸学习版',
-        quantity: 50,
-        unitPrice: 1299.00,
-        totalAmount: 64950.00,
-        salesperson: '王五',
-        orderDate: '2025-01-01',
-        status: 'confirmed'
-      }
+    tableData.value = [
+      { name: '数据项A', value: 123, date: '2025-01-01' },
+      { name: '数据项B', value: 456, date: '2025-01-02' },
+      { name: '数据项C', value: 789, date: '2025-01-03' },
     ];
     
-    total.value = 156;
+    total.value = 100;
   } catch (error) {
     ElMessage.error('加载数据失败');
   } finally {
@@ -524,13 +387,8 @@ const loadSalesData = async () => {
 };
 
 // 查看详情
-const viewDetail = (row: SaleData) => {
-  ElMessage.info(`查看订单详情: ${row.orderNo}`);
-};
-
-// 编辑订单
-const editOrder = (row: SaleData) => {
-  ElMessage.info(`编辑订单: ${row.orderNo}`);
+const viewDetail = (row: DashboardData) => {
+  ElMessage.info(`查看详情: ${row.name}`);
 };
 
 // 导出数据
@@ -540,195 +398,183 @@ const exportData = () => {
 
 // 初始化
 onMounted(() => {
-  loadSalesData();
+  loadTableData();
   updateChart();
 });
 </script>
 
 <style scoped>
-.sales-container {
+.dashboard-container {
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
 }
 
-/* 面包屑样式 */
-.breadcrumb-header {
-  margin-bottom: 20px;
-}
-
-/* 销售概览卡片 */
-.sales-overview {
+/* 概览卡片 */
+.overview-cards {
   margin-bottom: 20px;
 }
 
 .overview-card {
-  border-radius: 12px;
-  border: none;
-  transition: all 0.3s ease;
+  border-radius: 8px;
   overflow: hidden;
-}
-
-.overview-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.overview-card.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.overview-card.success {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-}
-
-.overview-card.warning {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-}
-
-.overview-card.info {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-  color: white;
-}
-
-.overview-content {
+  color: #fff;
+  position: relative;
+  height: 120px;
   display: flex;
   align-items: center;
   padding: 20px;
 }
 
+.overview-card.primary {
+  background: linear-gradient(45deg, #409eff, #79bbff);
+}
+
+.overview-card.success {
+  background: linear-gradient(45deg, #67c23a, #95d475);
+}
+
+.overview-card.warning {
+  background: linear-gradient(45deg, #e6a23c, #eebe77);
+}
+
+.overview-card.info {
+  background: linear-gradient(45deg, #909399, #b1b3b8);
+}
+
+.overview-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
 .overview-icon {
-  margin-right: 16px;
-  opacity: 0.8;
+  margin-right: 15px;
 }
 
 .overview-info {
-  flex: 1;
+  flex-grow: 1;
 }
 
 .overview-label {
   font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: 8px;
+  opacity: 0.8;
 }
 
 .overview-value {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 4px;
+  font-size: 24px;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
 .overview-trend {
   font-size: 12px;
+  margin-top: 5px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  opacity: 0.9;
 }
 
-/* 卡片样式 */
-.chart-card, .ranking-card, .table-card {
-  border-radius: 12px;
+.overview-trend.up {
+  color: #67c23a;
+}
+
+.overview-trend.down {
+  color: #f56c6c;
+}
+
+.overview-trend .el-icon {
+  margin-right: 3px;
+}
+
+/* 图表卡片 */
+.chart-card,
+.ranking-card,
+.table-card {
+  border-radius: 8px;
   border: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.chart-card:hover, .ranking-card:hover, .table-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+.chart-card:hover,
+.ranking-card:hover,
+.table-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0;
-}
-
-.card-title {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: bold;
   color: #303133;
 }
 
-.chart-controls, .table-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.chart-controls .el-select {
+  width: 120px;
 }
 
-/* 图表容器 */
 .chart-container {
+  width: 100%;
   height: 350px;
-  padding: 20px;
 }
 
-/* 排行榜样式 */
+/* 排行榜 */
 .ranking-list {
-  padding: 16px 0;
+  padding: 10px 0;
 }
 
 .ranking-item {
   display: flex;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f2f5;
-  transition: all 0.3s ease;
+  padding: 10px 0;
+  border-bottom: 1px solid #ebeef5;
 }
 
-.ranking-item:hover {
-  background-color: #f8f9fa;
-  margin: 0 -16px;
-  padding: 12px 16px;
-  border-radius: 8px;
+.ranking-item:last-child {
+  border-bottom: none;
 }
 
 .ranking-number {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
+  background-color: #f0f2f5;
+  color: #909399;
   display: flex;
-  align-items: center;
   justify-content: center;
-  font-weight: 600;
-  margin-right: 12px;
+  align-items: center;
+  font-weight: bold;
+  margin-right: 10px;
 }
 
 .ranking-number.first {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #333;
+  background-color: #e6a23c;
+  color: #fff;
 }
 
 .ranking-number.second {
-  background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
-  color: #333;
+  background-color: #409eff;
+  color: #fff;
 }
 
 .ranking-number.third {
-  background: linear-gradient(135deg, #cd7f32, #daa520);
-  color: white;
-}
-
-.ranking-number.normal {
-  background-color: #f0f2f5;
-  color: #606266;
+  background-color: #67c23a;
+  color: #fff;
 }
 
 .ranking-info {
-  flex: 1;
+  flex-grow: 1;
 }
 
 .ranking-name {
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: bold;
+  color: #303133;
 }
 
 .ranking-desc {
   font-size: 12px;
-  color: #909399 !important;
+  color: #909399;
 }
 
 .ranking-value {
@@ -736,8 +582,8 @@ onMounted(() => {
 }
 
 .ranking-value .value {
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-weight: bold;
+  color: #303133;
 }
 
 .ranking-value .percentage {
@@ -745,88 +591,56 @@ onMounted(() => {
   color: #909399;
 }
 
-/* 表格样式 */
-.table-card .el-table {
-  background-color: transparent;
+/* 表格 */
+.table-controls {
+  display: flex;
+  align-items: center;
+}
+
+.el-table th {
+  background-color: #f5f7fa;
+  font-weight: 500;
+  color: #606266;
+}
+
+.el-table td {
+  padding: 6px;
+}
+
+.el-table .cell {
+  line-height: 1.5;
 }
 
 .pagination-container {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+  padding: 10px 0;
+  background-color: #fff;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* 分析弹窗样式 */
-.analysis-content {
-  padding: 20px;
-}
-
-.analysis-chart, .analysis-stats {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.analysis-chart h4, .analysis-stats h4 {
-  margin: 0 0 16px 0;
-  color: #303133;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.stat-item {
-  text-align: center;
-  padding: 16px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .sales-container {
+  .dashboard-container {
     padding: 16px;
   }
-  
-  .chart-controls, .table-controls {
+  .overview-cards .el-col {
+    margin-bottom: 15px;
+  }
+  .chart-controls,
+  .table-controls {
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    align-items: flex-start;
   }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .chart-controls .el-select,
+  .table-controls .el-input,
+  .table-controls .el-date-picker {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
-}
-
-/* 动画效果 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.overview-card, .chart-card, .ranking-card, .table-card {
-  animation: fadeInUp 0.6s ease-out;
 }
 </style>
+
