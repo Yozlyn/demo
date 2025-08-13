@@ -76,7 +76,7 @@ const router = createRouter({
           path: '/customers/grades',
           name: 'customerGrades',
           meta: { title: '会员等级' },
-          component: () => import('../views/CustomerGradesView.vue')  // 创建对应视图
+          component: () => import('../views/CustomerGradesView.vue')
         },
         {
           path: '/customers/addresses',
@@ -139,3 +139,4 @@ const router = createRouter({
 })
 
 export default router
+
