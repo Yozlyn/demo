@@ -10,7 +10,7 @@
     <!-- 登录卡片 -->
     <el-card class="login-card" shadow="hover">
       <div class="login-header">
-        <h2 class="login-title">学子通教育装备商城</h2>
+        <h2 class="login-title">学子通教育装备商城管理系统</h2>
         <p class="login-desc">请输入账号信息</p>
       </div>
       
