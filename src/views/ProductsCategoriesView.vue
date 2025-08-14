@@ -201,12 +201,13 @@ const filteredTableData = computed(() => {
 // 获取商品分类数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/productCategory/page", {
+  axios.get<PageResponse>("http://localhost:8080/productCategories/page", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
     },
   }).then(res => {
+    console.log("Response:", res.data); // 调试：查看响应数据
     state.tableData = res.data.data;
     state.total = res.data.count;
   }).catch(err => {
@@ -247,8 +248,8 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
   const url = state.isEdit 
-    ? "http://localhost:8080/productCategory/update" 
-    : "http://localhost:8080/productCategory/add";
+    ? "http://localhost:8080/productCategories/update" 
+    : "http://localhost:8080/productCategories/add";
   
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
@@ -276,7 +277,7 @@ const handleDelete = (row: ProductCategory) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategory/delete", { 
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/delete", { 
         categoryId: row.categoryId 
       });
       
@@ -308,7 +309,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const categoryIds = selectedRows.value.map(row => row.categoryId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategory/batchDelete", { categoryIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/batchDelete", { categoryIds });
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个商品分类`);
         selectedRows.value = [];

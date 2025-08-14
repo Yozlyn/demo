@@ -226,7 +226,7 @@ const filteredTableData = computed(() => {
 // 获取商品库存数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/productInventory/page", {
+  axios.get<PageResponse>("http://localhost:8080/productInventories/page", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
@@ -274,8 +274,8 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
   const url = state.isEdit 
-    ? "http://localhost:8080/productInventory/update" 
-    : "http://localhost:8080/productInventory/add";
+    ? "http://localhost:8080/productInventories/update" 
+    : "http://localhost:8080/productInventories/add";
   
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
@@ -303,7 +303,7 @@ const handleDelete = (row: ProductInventory) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventory/delete", { 
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventories/delete", { 
         inventoryId: row.inventoryId 
       });
       
