@@ -1,18 +1,17 @@
 <template>
-  <div class="users-container">
+  <div class="orders-pending-container">
     <!-- 顶部筛选和操作 -->
     <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div class="search-bar">
         <el-input
           v-model="searchQuery"
-          placeholder="请输入订单号/客户名称/商品名称"  
+          placeholder="请输入订单号/客户名称/商品名称"
           :prefix-icon="Search"
           size="default"
-          style="width: 250px;"
+          style="width: 250px; margin-right: 10px;"
           clearable
         />
-        <el-select v-model="statusFilter" placeholder="订单状态" size="default" style="margin-left: 10px; width: 120px;">
-          <el-option label="全部" value=""></el-option>
+        <el-select v-model="state.statusFilter" placeholder="状态" size="default" style="margin-left: 10px; width: 120px;">
           <el-option label="待付款" value="pending_payment"></el-option>
           <el-option label="待发货" value="pending_shipment"></el-option>
         </el-select>
@@ -54,14 +53,14 @@
             <el-table-column type="selection" width="50" />
             <el-table-column type="index" label="编号" width="60" />
             <el-table-column prop="orderNo" label="订单号" min-width="150" />
-            <el-table-column prop="customerName" label="客户名称" min-width="150" />
-            <el-table-column prop="productName" label="商品名称" min-width="200" />
-            <el-table-column prop="quantity" label="数量" width="80" />
+            <el-table-column prop="customerName" label="客户名称" width="150" />
+            <el-table-column prop="productName" label="商品名称" width="150" />
+            <el-table-column prop="quantity" label="数量" width="100" />
             <el-table-column prop="totalAmount" label="总金额" width="120" />
-            <el-table-column prop="orderDate" label="订单日期" width="150" />
+            <el-table-column prop="orderDate" label="订单日期" width="120" />
             <el-table-column prop="status" label="状态" width="100">
               <template #default="scope">
-                <el-tag :type="getStatusType(scope.row.status)" size="small">
+                <el-tag :type="getStatusType(scope.row.status)">
                   {{ getStatusText(scope.row.status) }}
                 </el-tag>
               </template>
@@ -119,14 +118,20 @@
         <el-form-item label="订单号" :label-width="state.formLabelWidth" prop="orderNo">
           <el-input v-model="state.form.orderNo" autocomplete="off" />
         </el-form-item>
+        <el-form-item label="客户ID" :label-width="state.formLabelWidth" prop="customerId">
+          <el-input v-model="state.form.customerId" autocomplete="off" />
+        </el-form-item>
         <el-form-item label="客户名称" :label-width="state.formLabelWidth" prop="customerName">
           <el-input v-model="state.form.customerName" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="商品ID" :label-width="state.formLabelWidth" prop="productId">
+          <el-input v-model="state.form.productId" autocomplete="off" />
         </el-form-item>
         <el-form-item label="商品名称" :label-width="state.formLabelWidth" prop="productName">
           <el-input v-model="state.form.productName" autocomplete="off" />
         </el-form-item>
         <el-form-item label="数量" :label-width="state.formLabelWidth" prop="quantity">
-          <el-input-number v-model="state.form.quantity" :min="1" />
+          <el-input-number v-model="state.form.quantity" :min="0" />
         </el-form-item>
         <el-form-item label="总金额" :label-width="state.formLabelWidth" prop="totalAmount">
           <el-input-number v-model="state.form.totalAmount" :min="0" :precision="2" />
@@ -135,16 +140,33 @@
           <el-date-picker
             v-model="state.form.orderDate"
             type="date"
-            value-format="YYYY-MM-DD"
             placeholder="选择日期"
-            style="width: 100%"
-          ></el-date-picker>
+            value-format="YYYY-MM-DD"
+          />
         </el-form-item>
         <el-form-item label="状态" :label-width="state.formLabelWidth" prop="status">
-          <el-select v-model="state.form.status" placeholder="请选择状态">
+          <el-select v-model="state.form.status" placeholder="请选择订单状态">
             <el-option label="待付款" value="pending_payment"></el-option>
             <el-option label="待发货" value="pending_shipment"></el-option>
           </el-select>
+        </el-form-item>
+        <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="createdAt">
+          <el-date-picker
+            v-model="state.form.createdAt"
+            type="datetime"
+            placeholder="选择日期时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            :disabled="state.isEdit"
+          />
+        </el-form-item>
+        <el-form-item label="更新时间" :label-width="state.formLabelWidth" prop="updatedAt">
+          <el-date-picker
+            v-model="state.form.updatedAt"
+            type="datetime"
+            placeholder="选择日期时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            :disabled="state.isEdit"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -166,26 +188,30 @@ import axios from "axios";
 import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
 import type { FormInstance } from "element-plus";
 
-// 定义订单数据类型接口
-interface Order {
+// 定义待处理订单数据类型接口
+interface OrderPending {
   orderId: string;
   orderNo: string;
+  customerId: string;
   customerName: string;
+  productId: string;
   productName: string;
   quantity: number;
   totalAmount: number;
   orderDate: string;
   status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 定义表单数据类型
-interface OrderForm extends Order {}
+interface OrderPendingForm extends OrderPending {}
 
 // 定义分页响应数据类型
 interface PageResponse {
   code: number;
   msg?: string;
-  data: Order[];
+  data: OrderPending[];
   count: number;
 }
 
@@ -199,8 +225,7 @@ interface ApiResponse {
 const ruleFormRef = ref<FormInstance>();
 const tableLoading = ref(false);
 const searchQuery = ref("");
-const statusFilter = ref("");
-const selectedRows = ref<Order[]>([]);
+const selectedRows = ref<OrderPending[]>([]);
 
 // 页面状态管理
 const state = reactive({
@@ -208,20 +233,25 @@ const state = reactive({
   dialogTitle: "修改待处理订单信息",
   isEdit: true,
   formLabelWidth: "140px",
-  tableData: [] as Order[],
+  tableData: [] as OrderPending[],
   pageNum: 1,
   pageSize: 10,
   total: 0,
+  statusFilter: "",
   form: {
     orderId: "",
     orderNo: "",
+    customerId: "",
     customerName: "",
+    productId: "",
     productName: "",
     quantity: 0,
     totalAmount: 0,
     orderDate: "",
     status: "",
-  } as OrderForm,
+    createdAt: "",
+    updatedAt: "",
+  } as OrderPendingForm,
 });
 
 // 表单校验规则
@@ -229,8 +259,14 @@ const rules = reactive({
   orderNo: [
     { required: true, message: "订单号不能为空", trigger: "blur" },
   ],
+  customerId: [
+    { required: true, message: "客户ID不能为空", trigger: "blur" },
+  ],
   customerName: [
     { required: true, message: "客户名称不能为空", trigger: "blur" },
+  ],
+  productId: [
+    { required: true, message: "商品ID不能为空", trigger: "blur" },
   ],
   productName: [
     { required: true, message: "商品名称不能为空", trigger: "blur" },
@@ -247,6 +283,12 @@ const rules = reactive({
   status: [
     { required: true, message: "订单状态不能为空", trigger: "blur" },
   ],
+  createdAt: [
+    { required: true, message: "创建时间不能为空", trigger: "change" },
+  ],
+  updatedAt: [
+    { required: true, message: "更新时间不能为空", trigger: "change" },
+  ],
 });
 
 // 过滤数据
@@ -255,8 +297,7 @@ const filteredTableData = computed(() => {
     const searchMatch = item.orderNo.includes(searchQuery.value) || 
                        item.customerName.includes(searchQuery.value) ||
                        item.productName.includes(searchQuery.value);
-    const statusMatch = !statusFilter.value || item.status === statusFilter.value;
-    return searchMatch && statusMatch;
+    return searchMatch;
   });
 });
 
@@ -281,14 +322,25 @@ const getStatusText = (status: string) => {
 // 获取待处理订单数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/order/pendingPage", {
+  axios.get<PageResponse>("http://localhost:8080/orderPending/pendingPage", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
+      status: state.statusFilter,
     },
   }).then(res => {
-    state.tableData = res.data.data;
-    state.total = res.data.count;
+    if (res.data.code === 0) {
+      state.tableData = res.data.data.map(item => ({
+        ...item,
+        orderDate: item.orderDate || "",
+        createdAt: item.createdAt || "",
+        updatedAt: item.updatedAt || "",
+      }));
+      console.log("Fetched data:", state.tableData);
+      state.total = res.data.count;
+    } else {
+      ElMessage.error("获取数据失败：" + (res.data.msg || "未知错误"));
+    }
   }).catch(err => {
     ElMessage.error("获取数据失败：" + err.message);
   }).finally(() => {
@@ -308,18 +360,22 @@ const handleAdd = () => {
   state.form = {
     orderId: "",
     orderNo: "",
+    customerId: "",
     customerName: "",
+    productId: "",
     productName: "",
     quantity: 0,
     totalAmount: 0,
     orderDate: "",
-    status: "",
+    status: "pending_payment", // 默认状态
+    createdAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+    updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
   };
   ruleFormRef.value?.resetFields();
 };
 
 // 编辑待处理订单
-const handleEdit = (row: Order) => {
+const handleEdit = (row: OrderPending) => {
   state.isEdit = true;
   state.dialogTitle = "修改待处理订单信息";
   state.dialogFormVisible = true;
@@ -331,8 +387,8 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
   const url = state.isEdit 
-    ? "http://localhost:8080/order/updatePending" 
-    : "http://localhost:8080/order/addPending";
+    ? "http://localhost:8080/orderPending/updatePending" 
+    : "http://localhost:8080/orderPending/addPending";
   
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
@@ -349,7 +405,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
 };
 
 // 删除待处理订单
-const handleDelete = (row: Order) => {
+const handleDelete = (row: OrderPending) => {
   ElMessageBox.confirm(
     `确定要删除订单号为${row.orderNo}的待处理订单吗?`,
     "警告",
@@ -360,7 +416,7 @@ const handleDelete = (row: Order) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/order/deletePending", { 
+      const res = await axios.post<ApiResponse>("http://localhost:8080/orderPending/deletePending", { 
         orderId: row.orderId 
       });
       
@@ -379,7 +435,7 @@ const handleDelete = (row: Order) => {
 };
 
 // 表格选择和批量删除
-const handleSelectionChange = (val: Order[]) => { selectedRows.value = val; };
+const handleSelectionChange = (val: OrderPending[]) => { selectedRows.value = val; };
 
 const handleBatchDelete = async () => {
   if (selectedRows.value.length === 0) {
@@ -392,7 +448,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const orderIds = selectedRows.value.map(row => row.orderId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/order/batchDeletePending", { orderIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/orderPending/batchDeletePending", orderIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个待处理订单`);
         selectedRows.value = [];
@@ -411,7 +467,7 @@ onMounted(getData);
 </script>
 
 <style scoped>
-.users-container {
+.orders-pending-container {
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -524,7 +580,7 @@ onMounted(getData);
 }
 
 @media (max-width: 768px) {
-  .users-container {
+  .orders-pending-container {
     padding: 16px;
   }
   .header-actions {

@@ -293,7 +293,7 @@ const getStatusText = (status: string) => {
 // 获取订单数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/order/page", {
+  axios.get<PageResponse>("http://localhost:8080/orderStatistic/page", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,

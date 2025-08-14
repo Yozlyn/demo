@@ -65,6 +65,7 @@
             </el-table-column>
             <el-table-column prop="comment" label="评论内容" min-width="200" />
             <el-table-column prop="reviewDate" label="评价日期" width="150" />
+            <el-table-column prop="createdAt" label="创建时间" width="180" />
             <el-table-column fixed="right" label="操作" width="140">
               <template #default="scope">
                 <el-tooltip content="编辑" placement="top">
@@ -122,18 +123,17 @@
           <el-input v-model="state.form.customerId" autocomplete="off" />
         </el-form-item>
         <el-form-item label="评分" :label-width="state.formLabelWidth" prop="rating">
-          <el-input-number v-model="state.form.rating" :min="1" :max="5" />
+          <el-rate v-model="state.form.rating" />
         </el-form-item>
         <el-form-item label="评论内容" :label-width="state.formLabelWidth" prop="comment">
-          <el-input type="textarea" v-model="state.form.comment" autocomplete="off" />
+          <el-input v-model="state.form.comment" type="textarea" autocomplete="off" />
         </el-form-item>
         <el-form-item label="评价日期" :label-width="state.formLabelWidth" prop="reviewDate">
           <el-date-picker
             v-model="state.form.reviewDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="选择日期"
-            style="width: 100%"
+            type="datetime"
+            placeholder="选择日期时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
       </el-form>
@@ -164,6 +164,8 @@ interface ProductReview {
   rating: number;
   comment: string;
   reviewDate: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 定义表单数据类型
@@ -204,9 +206,11 @@ const state = reactive({
     reviewId: "",
     productId: "",
     customerId: "",
-    rating: 0,
+    rating: 5,
     comment: "",
     reviewDate: "",
+    createdAt: "",
+    updatedAt: "",
   } as ProductReviewForm,
 });
 
@@ -219,10 +223,7 @@ const rules = reactive({
     { required: true, message: "客户ID不能为空", trigger: "blur" },
   ],
   rating: [
-    { required: true, message: "评分不能为空", trigger: "blur" },
-  ],
-  comment: [
-    { required: true, message: "评论内容不能为空", trigger: "blur" },
+    { required: true, message: "评分不能为空", trigger: "change" },
   ],
   reviewDate: [
     { required: true, message: "评价日期不能为空", trigger: "change" },
@@ -232,9 +233,9 @@ const rules = reactive({
 // 过滤数据
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
-    const searchMatch = item.comment.includes(searchQuery.value) || 
-                       item.productId.includes(searchQuery.value) ||
-                       item.customerId.includes(searchQuery.value);
+    const searchMatch = item.productId.includes(searchQuery.value) ||
+                        item.customerId.includes(searchQuery.value) ||
+                        item.comment.includes(searchQuery.value);
     const ratingMatch = ratingFilter.value === "" || item.rating === ratingFilter.value;
     return searchMatch && ratingMatch;
   });
@@ -249,8 +250,17 @@ const getData = () => {
       pageSize: state.pageSize,
     },
   }).then(res => {
-    state.tableData = res.data.data;
-    state.total = res.data.count;
+    if (res.data.code === 0) {
+      state.tableData = res.data.data.map(item => ({
+        ...item,
+        reviewDate: item.reviewDate || "",
+        createdAt: item.createdAt || "",
+        updatedAt: item.updatedAt || "",
+      }));
+      state.total = res.data.count;
+    } else {
+      ElMessage.error("获取数据失败：" + (res.data.msg || "未知错误"));
+    }
   }).catch(err => {
     ElMessage.error("获取数据失败：" + err.message);
   }).finally(() => {
@@ -271,9 +281,11 @@ const handleAdd = () => {
     reviewId: "",
     productId: "",
     customerId: "",
-    rating: 0,
+    rating: 5,
     comment: "",
     reviewDate: "",
+    createdAt: "",
+    updatedAt: "",
   };
   ruleFormRef.value?.resetFields();
 };
@@ -352,7 +364,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const reviewIds = selectedRows.value.map(row => row.reviewId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productReview/batchDelete", { reviewIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productReview/batchDelete", reviewIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个商品评价`);
         selectedRows.value = [];

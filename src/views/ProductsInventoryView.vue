@@ -5,7 +5,7 @@
       <div class="search-bar">
         <el-input
           v-model="searchQuery"
-          placeholder="请输入商品名称/库存ID"  
+          placeholder="请输入库存ID/商品ID"  
           :prefix-icon="Search"
           size="default"
           style="width: 250px;"
@@ -48,10 +48,11 @@
           >
             <el-table-column type="selection" width="50" />
             <el-table-column type="index" label="编号" width="60" />
-            <el-table-column prop="productName" label="商品名称" min-width="180" />
-            <el-table-column prop="warehouseLocation" label="仓库位置" width="150" />
+            <el-table-column prop="productId" label="商品ID" min-width="150" />
+            <el-table-column prop="location" label="仓库位置" width="150" />
             <el-table-column prop="quantity" label="数量" width="100" />
             <el-table-column prop="lastUpdated" label="最后更新时间" width="180" />
+            <el-table-column prop="createdAt" label="创建时间" width="180" />
             <el-table-column fixed="right" label="操作" width="140">
               <template #default="scope">
                 <el-tooltip content="编辑" placement="top">
@@ -105,11 +106,8 @@
         <el-form-item label="商品ID" :label-width="state.formLabelWidth" prop="productId">
           <el-input v-model="state.form.productId" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="商品名称" :label-width="state.formLabelWidth" prop="productName">
-          <el-input v-model="state.form.productName" autocomplete="off" />
-        </el-form-item>
-        <el-form-item label="仓库位置" :label-width="state.formLabelWidth" prop="warehouseLocation">
-          <el-input v-model="state.form.warehouseLocation" autocomplete="off" />
+        <el-form-item label="仓库位置" :label-width="state.formLabelWidth" prop="location">
+          <el-input v-model="state.form.location" autocomplete="off" />
         </el-form-item>
         <el-form-item label="数量" :label-width="state.formLabelWidth" prop="quantity">
           <el-input-number v-model="state.form.quantity" :min="0" />
@@ -120,6 +118,15 @@
             type="datetime"
             placeholder="选择日期时间"
             value-format="YYYY-MM-DD HH:mm:ss"
+          />
+        </el-form-item>
+        <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="createdAt">
+          <el-date-picker
+            v-model="state.form.createdAt"
+            type="datetime"
+            placeholder="选择日期时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            :disabled="state.isEdit"
           />
         </el-form-item>
       </el-form>
@@ -146,10 +153,10 @@ import type { FormInstance } from "element-plus";
 interface ProductInventory {
   inventoryId: string;
   productId: string;
-  productName: string;
-  warehouseLocation: string;
+  location: string;
   quantity: number;
   lastUpdated: string;
+  createdAt: string;
 }
 
 // 定义表单数据类型
@@ -188,10 +195,10 @@ const state = reactive({
   form: {
     inventoryId: "",
     productId: "",
-    productName: "",
-    warehouseLocation: "",
+    location: "",
     quantity: 0,
     lastUpdated: "",
+    createdAt: "",
   } as ProductInventoryForm,
 });
 
@@ -200,10 +207,7 @@ const rules = reactive({
   productId: [
     { required: true, message: "商品ID不能为空", trigger: "blur" },
   ],
-  productName: [
-    { required: true, message: "商品名称不能为空", trigger: "blur" },
-  ],
-  warehouseLocation: [
+  location: [
     { required: true, message: "仓库位置不能为空", trigger: "blur" },
   ],
   quantity: [
@@ -212,12 +216,15 @@ const rules = reactive({
   lastUpdated: [
     { required: true, message: "最后更新时间不能为空", trigger: "change" },
   ],
+  createdAt: [
+    { required: true, message: "创建时间不能为空", trigger: "change" },
+  ],
 });
 
 // 过滤数据
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
-    const searchMatch = item.productName.includes(searchQuery.value) || 
+    const searchMatch = item.productId.includes(searchQuery.value) || 
                        item.inventoryId.includes(searchQuery.value);
     return searchMatch;
   });
@@ -226,14 +233,22 @@ const filteredTableData = computed(() => {
 // 获取商品库存数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/productInventories/page", {
+  axios.get<PageResponse>("http://localhost:8080/productInventory/page", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
     },
   }).then(res => {
-    state.tableData = res.data.data;
-    state.total = res.data.count;
+    if (res.data.code === 0) {
+      state.tableData = res.data.data.map(item => ({
+        ...item,
+        lastUpdated: item.lastUpdated || "",
+        createdAt: item.createdAt || "",
+      }));
+      state.total = res.data.count;
+    } else {
+      ElMessage.error("获取数据失败：" + (res.data.msg || "未知错误"));
+    }
   }).catch(err => {
     ElMessage.error("获取数据失败：" + err.message);
   }).finally(() => {
@@ -253,10 +268,10 @@ const handleAdd = () => {
   state.form = {
     inventoryId: "",
     productId: "",
-    productName: "",
-    warehouseLocation: "",
+    location: "",
     quantity: 0,
     lastUpdated: "",
+    createdAt: "",
   };
   ruleFormRef.value?.resetFields();
 };
@@ -266,7 +281,7 @@ const handleEdit = (row: ProductInventory) => {
   state.isEdit = true;
   state.dialogTitle = "修改商品库存信息";
   state.dialogFormVisible = true;
-  state.form = { ...row };
+  state.form = { ...row, createdAt: row.createdAt || "" };
 };
 
 // 提交表单
@@ -274,11 +289,15 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
   const url = state.isEdit 
-    ? "http://localhost:8080/productInventories/update" 
-    : "http://localhost:8080/productInventories/add";
+    ? "http://localhost:8080/productInventory/update" 
+    : "http://localhost:8080/productInventory/add";
   
   try {
-    const res = await axios.post<ApiResponse>(url, state.form);
+    const res = await axios.post<ApiResponse>(url, {
+      ...state.form,
+      lastUpdated: state.form.lastUpdated || new Date().toISOString().slice(0, 19).replace('T', ' '),
+      createdAt: state.form.createdAt || new Date().toISOString().slice(0, 19).replace('T', ' '),
+    });
     if (res.data.code === 0) {
       ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
       state.dialogFormVisible = false;
@@ -303,7 +322,7 @@ const handleDelete = (row: ProductInventory) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventories/delete", { 
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventory/delete", { 
         inventoryId: row.inventoryId 
       });
       
@@ -335,7 +354,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const inventoryIds = selectedRows.value.map(row => row.inventoryId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventory/batchDelete", { inventoryIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productInventory/batchDelete", inventoryIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个商品库存`);
         selectedRows.value = [];
@@ -476,6 +495,3 @@ onMounted(getData);
   }
 }
 </style>
-
-
-

@@ -5,7 +5,7 @@
       <div class="search-bar">
         <el-input
           v-model="searchQuery"
-          placeholder="请输入商品名称/ID"  
+          placeholder="请输入商品名称/ID"
           :prefix-icon="Search"
           size="default"
           style="width: 250px;"
@@ -18,18 +18,18 @@
         </el-select>
       </div>
       <div>
-        <el-button 
-          class="custom-primary-button" 
-          :icon="Plus" 
+        <el-button
+          class="custom-primary-button"
+          :icon="Plus"
           @click="handleAdd"
         >
           新增
         </el-button>
-        <el-button 
-          class="custom-batch-delete-button" 
+        <el-button
+          class="custom-batch-delete-button"
           :icon="Delete"
-          style="margin-left: 10px;" 
-          @click="handleBatchDelete" 
+          style="margin-left: 10px;"
+          @click="handleBatchDelete"
           :disabled="selectedRows.length === 0"
         >
           批量删除
@@ -41,21 +41,21 @@
     <el-row>
       <el-col :span="24">
         <el-card shadow="hover" class="table-card">
-          <el-table 
+          <el-table
             :data="filteredTableData"
             style="width: 100%"
             v-loading="tableLoading"
             border
             stripe
             row-key="productId"
-            height="calc(100vh - 280px)" 
+            height="calc(100vh - 280px)"
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="50" />
             <el-table-column type="index" label="编号" width="60" />
             <el-table-column label="商品图片" width="100">
               <template #default="scope">
-                <el-image 
+                <el-image
                   style="width: 60px; height: 60px; border-radius: 4px;"
                   :src="scope.row.imageUrl || '/src/assets/images/default_product.png'"
                   fit="cover"
@@ -63,7 +63,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="productName" label="商品名称" min-width="180" />
-            <el-table-column prop="category" label="分类" width="120" />
+            <el-table-column prop="categoryName" label="分类" width="120" />
             <el-table-column prop="price" label="价格" width="100" />
             <el-table-column prop="stock" label="库存" width="80" />
             <el-table-column prop="status" label="状态" width="100">
@@ -77,8 +77,8 @@
             <el-table-column fixed="right" label="操作" width="140">
               <template #default="scope">
                 <el-tooltip content="编辑" placement="top">
-                  <el-button 
-                    :icon="Edit" 
+                  <el-button
+                    :icon="Edit"
                     size="default"
                     class="custom-edit-button"
                     @click="handleEdit(scope.row)"
@@ -86,8 +86,8 @@
                   />
                 </el-tooltip>
                 <el-tooltip content="删除" placement="top">
-                  <el-button 
-                    :icon="Delete" 
+                  <el-button
+                    :icon="Delete"
                     size="default"
                     class="custom-delete-button"
                     @click="handleDelete(scope.row)"
@@ -116,9 +116,9 @@
     <!-- 表单弹窗 -->
     <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="600">
       <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
-        <el-form-item 
-          label="商品ID" 
-          :label-width="state.formLabelWidth" 
+        <el-form-item
+          label="商品ID"
+          :label-width="state.formLabelWidth"
           prop="productId"
           v-if="state.isEdit"
         >
@@ -127,8 +127,8 @@
         <el-form-item label="商品名称" :label-width="state.formLabelWidth" prop="productName">
           <el-input v-model="state.form.productName" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="分类" :label-width="state.formLabelWidth" prop="category">
-          <el-input v-model="state.form.category" autocomplete="off" />
+        <el-form-item label="分类" :label-width="state.formLabelWidth" prop="categoryName">
+          <el-input v-model="state.form.categoryName" autocomplete="off" />
         </el-form-item>
         <el-form-item label="价格" :label-width="state.formLabelWidth" prop="price">
           <el-input-number v-model="state.form.price" :min="0" :precision="2" />
@@ -149,6 +149,7 @@
             value-format="YYYY-MM-DD HH:mm:ss"
             placeholder="请选择日期时间"
             style="width: 100%"
+            :disabled="state.isEdit"
           />
         </el-form-item>
         <el-form-item label="商品图片URL" :label-width="state.formLabelWidth" prop="imageUrl">
@@ -178,7 +179,7 @@ import type { FormInstance } from "element-plus";
 interface Product {
   productId: string;
   productName: string;
-  category: string;
+  categoryName: string;
   price: number;
   stock: number;
   status: string;
@@ -223,7 +224,7 @@ const state = reactive({
   form: {
     productId: "",
     productName: "",
-    category: "",
+    categoryName: "",
     price: 0,
     stock: 0,
     status: "",
@@ -237,7 +238,7 @@ const rules = reactive({
   productName: [
     { required: true, message: "商品名称不能为空", trigger: "blur" },
   ],
-  category: [
+  categoryName: [
     { required: true, message: "分类不能为空", trigger: "blur" },
   ],
   price: [
@@ -257,7 +258,7 @@ const rules = reactive({
 // 过滤数据
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
-    const searchMatch = item.productName.includes(searchQuery.value) || 
+    const searchMatch = item.productName.includes(searchQuery.value) ||
                        item.productId.includes(searchQuery.value);
     const statusMatch = !statusFilter.value || item.status === statusFilter.value;
     return searchMatch && statusMatch;
@@ -291,7 +292,10 @@ const getData = () => {
       pageSize: state.pageSize,
     },
   }).then(res => {
-    state.tableData = res.data.data;
+    state.tableData = res.data.data.map(item => ({
+      ...item,
+      createTime: item.createTime || new Date().toISOString().replace('T', ' ').substring(0, 19),
+    }));
     state.total = res.data.count;
   }).catch(err => {
     ElMessage.error("获取数据失败：" + err.message);
@@ -312,11 +316,11 @@ const handleAdd = () => {
   state.form = {
     productId: "",
     productName: "",
-    category: "",
+    categoryName: "",
     price: 0,
     stock: 0,
     status: "on_sale",
-    createTime: "",
+    createTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
     imageUrl: "",
   };
   ruleFormRef.value?.resetFields();
@@ -327,17 +331,20 @@ const handleEdit = (row: Product) => {
   state.isEdit = true;
   state.dialogTitle = "修改商品信息";
   state.dialogFormVisible = true;
-  state.form = { ...row };
+  state.form = {
+    ...row,
+    createTime: row.createTime || new Date().toISOString().replace('T', ' ').substring(0, 19),
+  };
 };
 
 // 提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
-  const url = state.isEdit 
-    ? "http://localhost:8080/product/update" 
+  const url = state.isEdit
+    ? "http://localhost:8080/product/update"
     : "http://localhost:8080/product/add";
-  
+
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
     if (res.data.code === 0) {
@@ -364,10 +371,9 @@ const handleDelete = (row: Product) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/product/delete", { 
-        productId: row.productId 
+      const res = await axios.post<ApiResponse>("http://localhost:8080/product/delete", {
+        productId: row.productId
       });
-      
       if (res.data.code === 0) {
         ElMessage.success("删除成功");
         getData();
@@ -390,7 +396,7 @@ const handleBatchDelete = async () => {
     ElMessage.warning("请先选择要删除的商品");
     return;
   }
-  
+
   ElMessageBox.confirm(`确定要删除${selectedRows.value.length}个选中的商品吗？`, "警告", {
     confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
   }).then(async () => {
@@ -537,4 +543,3 @@ onMounted(getData);
   }
 }
 </style>
-

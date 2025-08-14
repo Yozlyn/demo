@@ -1,5 +1,5 @@
 <template>
-  <div class="users-container">
+  <div class="customer-grades-container">
     <!-- 顶部筛选和操作 -->
     <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div class="search-bar">
@@ -42,21 +42,18 @@
             v-loading="tableLoading"
             border
             stripe
-            row-key="gradeId"
+            row-key="cgId"
             height="calc(100vh - 280px)" 
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="50" />
             <el-table-column type="index" label="编号" width="60" />
-            <el-table-column prop="gradeName" label="等级名称" min-width="150" />
-            <el-table-column prop="minPoints" label="最低积分" width="120" />
-            <el-table-column prop="maxPoints" label="最高积分" width="120" />
-            <el-table-column prop="discountRate" label="折扣率" width="100">
+            <el-table-column prop="cgName" label="等级名称" min-width="150" />
+            <el-table-column prop="cgDiscount" label="折扣率" width="100">
               <template #default="scope">
-                {{ (scope.row.discountRate * 100).toFixed(0) }}%
+                {{ (scope.row.cgDiscount * 100).toFixed(0) }}%
               </template>
             </el-table-column>
-            <el-table-column prop="description" label="描述" min-width="200" />
             <el-table-column fixed="right" label="操作" width="140">
               <template #default="scope">
                 <el-tooltip content="编辑" placement="top">
@@ -98,29 +95,20 @@
 
     <!-- 表单弹窗 -->
     <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="600">
-      <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
+      <el-form :model="state.form" ref="ruleFormRef" :rules="state.rules">
         <el-form-item 
           label="等级ID" 
           :label-width="state.formLabelWidth" 
-          prop="gradeId"
+          prop="cgId"
           v-if="state.isEdit"
         >
-          <el-input v-model="state.form.gradeId" autocomplete="off" readonly />
+          <el-input v-model="state.form.cgId" autocomplete="off" readonly />
         </el-form-item>
-        <el-form-item label="等级名称" :label-width="state.formLabelWidth" prop="gradeName">
-          <el-input v-model="state.form.gradeName" autocomplete="off" />
+        <el-form-item label="等级名称" :label-width="state.formLabelWidth" prop="cgName">
+          <el-input v-model="state.form.cgName" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="最低积分" :label-width="state.formLabelWidth" prop="minPoints">
-          <el-input-number v-model="state.form.minPoints" :min="0" />
-        </el-form-item>
-        <el-form-item label="最高积分" :label-width="state.formLabelWidth" prop="maxPoints">
-          <el-input-number v-model="state.form.maxPoints" :min="0" />
-        </el-form-item>
-        <el-form-item label="折扣率" :label-width="state.formLabelWidth" prop="discountRate">
-          <el-input-number v-model="state.form.discountRate" :min="0" :max="1" :step="0.01" />
-        </el-form-item>
-        <el-form-item label="描述" :label-width="state.formLabelWidth" prop="description">
-          <el-input type="textarea" v-model="state.form.description" autocomplete="off" />
+        <el-form-item label="折扣率" :label-width="state.formLabelWidth" prop="cgDiscount">
+          <el-input-number v-model="state.form.cgDiscount" :min="0" :max="1" :step="0.01" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -140,16 +128,13 @@ import { reactive, onMounted, ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from 'element-plus';
 import axios from "axios";
 import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue';
-import type { FormInstance } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 
 // 定义会员等级数据类型接口
 interface CustomerGrade {
-  gradeId: string;
-  gradeName: string;
-  minPoints: number;
-  maxPoints: number;
-  discountRate: number;
-  description: string;
+  cgId: number;
+  cgName: string;
+  cgDiscount: number;
 }
 
 // 定义表单数据类型
@@ -170,52 +155,55 @@ interface ApiResponse {
   data?: any;
 }
 
+// 定义 state 的类型
+interface State {
+  dialogFormVisible: boolean;
+  dialogTitle: string;
+  isEdit: boolean;
+  formLabelWidth: string;
+  tableData: CustomerGrade[];
+  pageNum: number;
+  pageSize: number;
+  total: number;
+  form: CustomerGradeForm;
+  rules: FormRules;
+}
+
 const ruleFormRef = ref<FormInstance>();
 const tableLoading = ref(false);
 const searchQuery = ref('');
 const selectedRows = ref<CustomerGrade[]>([]);
 
 // 页面状态管理
-const state = reactive({
+const state = reactive<State>({
   dialogFormVisible: false,
   dialogTitle: '修改会员等级信息',
   isEdit: true,
   formLabelWidth: "140px",
-  tableData: [] as CustomerGrade[],
+  tableData: [],
   pageNum: 1,
   pageSize: 10,
   total: 0,
   form: {
-    gradeId: "",
-    gradeName: "",
-    minPoints: 0,
-    maxPoints: 0,
-    discountRate: 0,
-    description: "",
-  } as CustomerGradeForm,
-});
-
-// 表单校验规则
-const rules = reactive({
-  gradeName: [
-    { required: true, message: '等级名称不能为空', trigger: 'blur' },
-  ],
-  minPoints: [
-    { required: true, message: '最低积分不能为空', trigger: 'blur' },
-  ],
-  maxPoints: [
-    { required: true, message: '最高积分不能为空', trigger: 'blur' },
-  ],
-  discountRate: [
-    { required: true, message: '折扣率不能为空', trigger: 'blur' },
-  ],
+    cgId: 0,
+    cgName: "",
+    cgDiscount: 0,
+  },
+  rules: {
+    cgName: [
+      { required: true, message: '等级名称不能为空', trigger: 'blur' },
+    ],
+    cgDiscount: [
+      { required: true, message: '折扣率不能为空', trigger: 'blur' },
+    ],
+  },
 });
 
 // 过滤数据
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
-    const searchMatch = item.gradeName.includes(searchQuery.value) || 
-                       item.gradeId.includes(searchQuery.value);
+    const searchMatch = item.cgName.includes(searchQuery.value) || 
+                       item.cgId.toString().includes(searchQuery.value);
     return searchMatch;
   });
 });
@@ -229,9 +217,19 @@ const getData = () => {
       pageSize: state.pageSize,
     },
   }).then(res => {
-    state.tableData = res.data.data;
-    state.total = res.data.count;
+    if (res.data.code === 0) {
+      state.tableData = res.data.data.map(item => ({
+        cgId: item.cgId || 0,
+        cgName: item.cgName || "",
+        cgDiscount: item.cgDiscount || 0,
+      }));
+      console.log("Fetched customer grades data:", state.tableData);
+      state.total = res.data.count;
+    } else {
+      ElMessage.error("获取数据失败：" + (res.data.msg || "未知错误"));
+    }
   }).catch(err => {
+    console.error('获取数据失败详情：', err);
     ElMessage.error('获取数据失败：' + err.message);
   }).finally(() => {
     tableLoading.value = false;
@@ -248,12 +246,9 @@ const handleAdd = () => {
   state.dialogTitle = '新增会员等级';
   state.dialogFormVisible = true;
   state.form = {
-    gradeId: "",
-    gradeName: "",
-    minPoints: 0,
-    maxPoints: 0,
-    discountRate: 0,
-    description: "",
+    cgId: 0,
+    cgName: "",
+    cgDiscount: 0,
   };
   ruleFormRef.value?.resetFields();
 };
@@ -291,7 +286,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
 // 删除会员等级
 const handleDelete = (row: CustomerGrade) => {
   ElMessageBox.confirm(
-    `确定要删除等级ID为${row.gradeId}的会员等级吗?`,
+    `确定要删除等级ID为${row.cgId}的会员等级吗?`,
     '警告',
     {
       confirmButtonText: '确定',
@@ -301,7 +296,7 @@ const handleDelete = (row: CustomerGrade) => {
   ).then(async () => {
     try {
       const res = await axios.post<ApiResponse>("http://localhost:8080/customerGrade/delete", { 
-        gradeId: row.gradeId 
+        gradeId: row.cgId 
       });
       
       if (res.data.code === 0) {
@@ -331,7 +326,7 @@ const handleBatchDelete = async () => {
     confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
   }).then(async () => {
     try {
-      const gradeIds = selectedRows.value.map(row => row.gradeId);
+      const gradeIds = selectedRows.value.map(row => row.cgId.toString());
       const res = await axios.post<ApiResponse>("http://localhost:8080/customerGrade/batchDelete", { gradeIds });
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个会员等级`);
@@ -351,7 +346,7 @@ onMounted(getData);
 </script>
 
 <style scoped>
-.users-container {
+.customer-grades-container {
   padding: 20px;
   background-color: #f8f9fa;
   min-height: 100vh;
@@ -464,7 +459,7 @@ onMounted(getData);
 }
 
 @media (max-width: 768px) {
-  .users-container {
+  .customer-grades-container {
     padding: 16px;
   }
   .header-actions {
@@ -473,4 +468,3 @@ onMounted(getData);
   }
 }
 </style>
-

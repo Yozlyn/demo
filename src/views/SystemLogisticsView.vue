@@ -265,10 +265,16 @@ const getData = () => {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
+      companyName: searchQuery.value,
+      status: statusFilter.value,
     },
   }).then(res => {
-    state.tableData = res.data.data;
-    state.total = res.data.count;
+    if (res.data.code === 0) {
+      state.tableData = res.data.data;
+      state.total = res.data.count;
+    } else {
+      ElMessage.error("获取数据失败：" + (res.data.msg || "未知错误"));
+    }
   }).catch(err => {
     ElMessage.error("获取数据失败：" + err.message);
   }).finally(() => {
