@@ -251,7 +251,8 @@ const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
     const searchMatch = item.consigneeName.includes(searchQuery.value) || 
                        item.addressId.includes(searchQuery.value);
-    const statusMatch = statusFilter.value === '' || item.isDefault === statusFilter.value;
+    const statusMatch = statusFilter.value === '' || 
+                        item.isDefault === (statusFilter.value === 'true');
     return searchMatch && statusMatch;
   });
 });
