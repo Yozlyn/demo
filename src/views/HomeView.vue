@@ -1,5 +1,5 @@
-```vue
 <template>
+  <!-- 保持原模板不变 -->
   <el-container class="layout-container" :style="{ height: '100vh' }">
     <!-- 侧边栏 - 支持折叠 -->
     <el-aside 
@@ -32,19 +32,19 @@
             <el-icon class="menu-icon"><Goods /></el-icon>
             <span>商品管理</span>
           </template>
-          <el-menu-item index="/products/list" class="menu-item">
+          <el-menu-item index="/admin/products/list" class="menu-item">
             <el-icon class="item-icon"><List /></el-icon>
             <span>商品列表</span>
           </el-menu-item>
-          <el-menu-item index="/products/categories" class="menu-item">
+          <el-menu-item index="/admin/products/categories" class="menu-item">
             <el-icon class="item-icon"><Folder /></el-icon>
             <span>商品分类</span>
           </el-menu-item>
-          <el-menu-item index="/products/inventory" class="menu-item">
+          <el-menu-item index="/admin/products/inventory" class="menu-item">
             <el-icon class="item-icon"><Box /></el-icon>
             <span>库存管理</span>
           </el-menu-item>
-          <el-menu-item index="/products/reviews" class="menu-item">
+          <el-menu-item index="/admin/products/reviews" class="menu-item">
             <el-icon class="item-icon"><Star /></el-icon>
             <span>商品评价</span>
           </el-menu-item>
@@ -56,19 +56,19 @@
             <el-icon class="menu-icon"><ShoppingCart /></el-icon>
             <span>订单管理</span>
           </template>
-          <el-menu-item index="/orders/list" class="menu-item">
+          <el-menu-item index="/admin/orders/list" class="menu-item">
             <el-icon class="item-icon"><List /></el-icon>
             <span>订单列表</span>
           </el-menu-item>
-          <el-menu-item index="/orders/pending" class="menu-item">
+          <el-menu-item index="/admin/orders/pending" class="menu-item">
             <el-icon class="item-icon"><Clock /></el-icon>
             <span>待处理订单</span>
           </el-menu-item>
-          <el-menu-item index="/orders/refunds" class="menu-item">
+          <el-menu-item index="/admin/orders/refunds" class="menu-item">
             <el-icon class="item-icon"><RefreshLeft /></el-icon>
             <span>退款处理</span>
           </el-menu-item>
-          <el-menu-item index="/orders/statistics" class="menu-item">
+          <el-menu-item index="/admin/orders/statistics" class="menu-item">
             <el-icon class="item-icon"><Histogram /></el-icon>
             <span>订单统计</span>
           </el-menu-item>
@@ -80,15 +80,15 @@
             <el-icon class="menu-icon"><User /></el-icon>
             <span>客户管理</span>
           </template>
-          <el-menu-item index="/customers/list" class="menu-item">
+          <el-menu-item index="/admin/customers/list" class="menu-item">
             <el-icon class="item-icon"><List /></el-icon>
             <span>客户列表</span>
           </el-menu-item>
-          <el-menu-item index="/customers/grades" class="menu-item">
+          <el-menu-item index="/admin/customers/grades" class="menu-item">
             <el-icon class="item-icon"><Rank /></el-icon>
             <span>会员等级</span>
           </el-menu-item>
-          <el-menu-item index="/customers/addresses" class="menu-item">
+          <el-menu-item index="/admin/customers/addresses" class="menu-item">
             <el-icon class="item-icon"><MapLocation /></el-icon>
             <span>地址管理</span>
           </el-menu-item>
@@ -100,15 +100,15 @@
             <el-icon class="menu-icon"><Ticket /></el-icon>
             <span>营销中心</span>
           </template>
-          <el-menu-item index="/marketing/coupons" class="menu-item">
+          <el-menu-item index="/admin/marketing/coupons" class="menu-item">
             <el-icon class="item-icon"><Discount /></el-icon>
             <span>优惠券管理</span>
           </el-menu-item>
-          <el-menu-item index="/marketing/activities" class="menu-item">
+          <el-menu-item index="/admin/marketing/activities" class="menu-item">
             <el-icon class="item-icon"><Present /></el-icon>
             <span>促销活动</span>
           </el-menu-item>
-          <el-menu-item index="/marketing/adverts" class="menu-item">
+          <el-menu-item index="/admin/marketing/adverts" class="menu-item">
             <el-icon class="item-icon"><Picture /></el-icon>
             <span>广告管理</span>
           </el-menu-item>
@@ -120,19 +120,19 @@
             <el-icon class="menu-icon"><Setting /></el-icon>
             <span>系统设置</span>
           </template>
-          <el-menu-item index="/system/users" class="menu-item">
+          <el-menu-item index="/admin/system/users" class="menu-item">
             <el-icon class="item-icon"><UserFilled /></el-icon>
             <span>管理员设置</span>
           </el-menu-item>
-          <el-menu-item index="/system/payment" class="menu-item">
+          <el-menu-item index="/admin/system/payment" class="menu-item">
             <el-icon class="item-icon"><Money /></el-icon>
             <span>支付设置</span>
           </el-menu-item>
-          <el-menu-item index="/system/logistics" class="menu-item">
+          <el-menu-item index="/admin/system/logistics" class="menu-item">
             <el-icon class="item-icon"><Van /></el-icon>
             <span>物流设置</span>
           </el-menu-item>
-          <el-menu-item index="/system/logs" class="menu-item">
+          <el-menu-item index="/admin/system/logs" class="menu-item">
             <el-icon class="item-icon"><Document /></el-icon>
             <span>操作日志</span>
           </el-menu-item>
@@ -242,8 +242,15 @@ const route = useRoute();
 // 用于刷新当前路由组件
 const routeKey = ref(Date.now());
 
+// 退出登录
 const handleLogout = () => {
-  router.push('/login');
+  // 清除所有登录相关数据
+  localStorage.removeItem('suId');
+  localStorage.removeItem('suName');
+  localStorage.removeItem('suRole');
+  localStorage.removeItem('username');
+  localStorage.removeItem('encryptedPassword');
+  router.push('/admin/login');
 };
 
 // 折叠/展开侧边栏
@@ -271,11 +278,17 @@ const refreshCurrentRoute = () => {
   routeKey.value = Date.now();
 };
 
-// 计算当前面包屑导航（基于路由路径模拟，例如 /products/list -> 商品管理 / 商品列表）
+// 计算当前面包屑导航
 const currentBreadcrumb = computed(() => {
   const pathSegments = route.path.split('/').filter(segment => segment);
-  if (pathSegments.length < 2) return '';
-  // 简单映射：假设第一个段为一级菜单，第二个为二级
+  // 处理 /admin 默认路由
+  if (pathSegments.length === 1 && pathSegments[0] === 'admin') {
+    return '仪表盘';
+  }
+  // 确保路径至少有 admin/xxx/xxx 结构
+  if (pathSegments.length < 3 || pathSegments[0] !== 'admin') {
+    return '未知页面';
+  }
   const menuMap: Record<string, string> = {
     products: '商品管理',
     orders: '订单管理',
@@ -301,8 +314,8 @@ const currentBreadcrumb = computed(() => {
     logistics: '物流设置',
     logs: '操作日志'
   };
-  const primary = menuMap[pathSegments[0]] || pathSegments[0];
-  const secondary = subMenuMap[pathSegments[1]] || pathSegments[1];
+  const primary = menuMap[pathSegments[1]] || pathSegments[1];
+  const secondary = subMenuMap[pathSegments[2]] || pathSegments[2];
   return `${primary} / ${secondary}`;
 });
 
@@ -540,4 +553,3 @@ const sidebarBgColor = '#ffffff';
   background-color: #ffffff;
 }
 </style>
-```

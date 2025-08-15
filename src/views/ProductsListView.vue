@@ -146,7 +146,7 @@
           <el-date-picker
             v-model="state.form.createTime"
             type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm"
             placeholder="请选择日期时间"
             style="width: 100%"
             :disabled="state.isEdit"
@@ -402,7 +402,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const productIds = selectedRows.value.map(row => row.productId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/product/batchDelete", { productIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/product/batchDelete", productIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个商品`);
         selectedRows.value = [];

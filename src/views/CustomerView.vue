@@ -49,8 +49,8 @@
             <el-table-column type="selection" width="50" />
             <el-table-column type="index" label="编号" width="60" />
             <el-table-column prop="customerName" label="客户名称" min-width="180" />
-            <el-table-column prop="contact" label="联系方式" width="150" />
-            <el-table-column prop="email" label="邮箱" min-width="200" />
+            <el-table-column prop="customerPhone" label="联系方式" width="150" />
+            <el-table-column prop="customerEmail" label="邮箱" min-width="200" />
             <el-table-column prop="createdAt" label="创建时间" width="180" />
             <el-table-column fixed="right" label="操作" width="140">
               <template #default="scope">
@@ -105,18 +105,18 @@
         <el-form-item label="客户名称" :label-width="state.formLabelWidth" prop="customerName">
           <el-input v-model="state.form.customerName" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="联系方式" :label-width="state.formLabelWidth" prop="contact">
-          <el-input v-model="state.form.contact" autocomplete="off" />
+        <el-form-item label="联系方式" :label-width="state.formLabelWidth" prop="customerPhone">
+          <el-input v-model="state.form.customerPhone" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="邮箱" :label-width="state.formLabelWidth" prop="email">
-          <el-input v-model="state.form.email" autocomplete="off" />
+        <el-form-item label="邮箱" :label-width="state.formLabelWidth" prop="customerEmail">
+          <el-input v-model="state.form.customerEmail" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="创建时间" :label-width="state.formLabelWidth" prop="createdAt">
+        <el-form-item label="注册时间" :label-width="state.formLabelWidth" prop="registrationDate">
           <el-date-picker
-            v-model="state.form.createdAt"
+            v-model="state.form.registrationDate"
             type="datetime"
             value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="请选择日期时间"
+            placeholder="请选择注册时间"
             style="width: 100%"
           />
         </el-form-item>
@@ -144,8 +144,9 @@ import type { FormInstance } from "element-plus";
 interface Customer {
   customerId: string;
   customerName: string;
-  contact: string;
-  email: string;
+  customerPhone: string;
+  customerEmail: string;
+  registrationDate: string;
   createdAt: string;
 }
 
@@ -185,9 +186,10 @@ const state = reactive({
   form: {
     customerId: "",
     customerName: "",
-    contact: "",
-    email: "",
-    createdAt: "",
+    customerPhone: "",
+    customerEmail: "",
+    registrationDate: "",
+    createdAt: ""
   } as CustomerForm,
 });
 
@@ -195,25 +197,26 @@ const state = reactive({
 const rules = reactive({
   customerName: [
     { required: true, message: "客户名称不能为空", trigger: "blur" },
-    { min: 2, max: 100, message: "长度在 2 到 100 个字符", trigger: "blur" },
+    { min: 2, max: 100, message: "长度在 2 到 100 个字符", trigger: "blur" }
   ],
-  contact: [
-    { required: false, message: "请输入联系方式", trigger: "blur" },
+  customerPhone: [
+    { required: true, message: "联系方式不能为空", trigger: "blur" },
+    { pattern: /^\d{10,20}$/, message: "请输入10-20位的电话号码", trigger: "blur" }
   ],
-  email: [
-    { type: "email", message: "请输入有效的邮箱地址", trigger: ["blur", "change"] },
+  customerEmail: [
+    { type: "email", message: "请输入有效的邮箱地址", trigger: ["blur", "change"] }
   ],
-  createdAt: [
-    { required: true, message: "创建时间不能为空", trigger: "blur" },
-  ],
+  registrationDate: [
+    { required: true, message: "注册时间不能为空", trigger: "blur" }
+  ]
 });
 
 // 过滤数据
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
     const searchMatch = item.customerName.includes(searchQuery.value) || 
-                       item.contact.includes(searchQuery.value) ||
-                       item.email.includes(searchQuery.value);
+                       item.customerPhone.includes(searchQuery.value) ||
+                       item.customerEmail.includes(searchQuery.value);
     return searchMatch;
   });
 });
@@ -230,6 +233,7 @@ const getData = () => {
     state.tableData = res.data.data;
     state.total = res.data.count;
   }).catch(err => {
+    console.error("获取数据失败：", err);
     ElMessage.error("获取数据失败：" + err.message);
   }).finally(() => {
     tableLoading.value = false;
@@ -248,9 +252,10 @@ const handleAdd = () => {
   state.form = {
     customerId: "",
     customerName: "",
-    contact: "",
-    email: "",
-    createdAt: "",
+    customerPhone: "",
+    customerEmail: "",
+    registrationDate: "",
+    createdAt: ""
   };
   ruleFormRef.value?.resetFields();
 };
@@ -271,16 +276,27 @@ const submitForm = async (formEl: FormInstance | undefined) => {
     ? "http://localhost:8080/customer/update" 
     : "http://localhost:8080/customer/add";
   
+  // 映射前端字段到后端字段
+  const payload = {
+    customerId: state.isEdit ? parseInt(state.form.customerId) : undefined,
+    customerName: state.form.customerName,
+    customerPhone: state.form.customerPhone,
+    customerEmail: state.form.customerEmail,
+    registrationDate: state.form.registrationDate
+  };
+  
   try {
-    const res = await axios.post<ApiResponse>(url, state.form);
+    const res = await axios.post<ApiResponse>(url, payload);
     if (res.data.code === 0) {
       ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
       state.dialogFormVisible = false;
       getData();
     } else {
+      console.error("后端错误：", res.data);
       ElMessage.error(res.data.msg || (state.isEdit ? "修改失败" : "新增失败"));
     }
   } catch (error) {
+    console.error("提交失败：", error);
     ElMessage.error("提交失败，请稍后重试");
   }
 };
@@ -298,7 +314,7 @@ const handleDelete = (row: Customer) => {
   ).then(async () => {
     try {
       const res = await axios.post<ApiResponse>("http://localhost:8080/customer/delete", { 
-        customerId: row.customerId 
+        customerId: parseInt(row.customerId) 
       });
       
       if (res.data.code === 0) {
@@ -308,6 +324,7 @@ const handleDelete = (row: Customer) => {
         ElMessage.error(res.data.msg || "删除失败");
       }
     } catch (error) {
+      console.error("删除失败：", error);
       ElMessage.error("删除失败，请稍后重试");
     }
   }).catch(() => {
@@ -328,8 +345,15 @@ const handleBatchDelete = async () => {
     confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
   }).then(async () => {
     try {
-      const customerIds = selectedRows.value.map(row => row.customerId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/customer/batchDelete", { customerIds });
+      // 提取客户ID数组
+      const customerIds = selectedRows.value.map(row => parseInt(row.customerId));
+      
+      // 关键修复：直接传递数组而不是包装在对象中
+      const res = await axios.post<ApiResponse>(
+        "http://localhost:8080/customer/batchDelete", 
+        customerIds  // 这里去掉了对象包装
+      );
+      
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个客户`);
         selectedRows.value = [];
@@ -338,6 +362,7 @@ const handleBatchDelete = async () => {
         ElMessage.error(res.data.msg || "批量删除失败");
       }
     } catch (error) {
+      console.error("批量删除失败：", error);
       ElMessage.error("批量删除失败，请稍后重试");
     }
   }).catch(() => ElMessage.info("操作已取消"));
@@ -470,4 +495,3 @@ onMounted(getData);
   }
 }
 </style>
-

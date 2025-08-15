@@ -371,7 +371,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const addressIds = selectedRows.value.map(row => row.addressId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/customerAddress/batchDelete", { addressIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/customerAddress/batchDelete", addressIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个地址`);
         selectedRows.value = [];

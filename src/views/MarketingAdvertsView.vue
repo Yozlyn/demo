@@ -405,8 +405,8 @@ const handleBatchDelete = async () => {
     confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
   }).then(async () => {
     try {
-      const advertIds = selectedRows.value.map(row => row.advertId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingAdvert/batchDelete", { advertIds });
+      const advertIds = selectedRows.value.map(row => (row.advertId));
+      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingAdvert/batchDelete",advertIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个广告`);
         selectedRows.value = [];

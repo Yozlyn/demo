@@ -363,8 +363,8 @@ const handleBatchDelete = async () => {
     confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
   }).then(async () => {
     try {
-      const paymentIds = selectedRows.value.map(row => row.paymentId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/systemPayment/batchDelete", { paymentIds });
+      const paymentIds = selectedRows.value.map(row => (row.paymentId));
+      const res = await axios.post<ApiResponse>("http://localhost:8080/systemPayment/batchDelete", paymentIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个支付信息`);
         selectedRows.value = [];

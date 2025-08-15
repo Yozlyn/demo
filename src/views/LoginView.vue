@@ -272,7 +272,7 @@ const handleLogin = async (event?: Event) => {
           hasSavedPassword.value = false;
         }
         
-        router.push('/');
+        router.push('/admin');
       } else {
         ElMessage.error('登录失败: ' + (res.data.msg || '用户名或密码错误'));
         if (!rememberMe.value || !hasSavedPassword.value) {

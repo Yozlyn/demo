@@ -319,23 +319,32 @@ const handleEdit = (row: SystemLog) => {
 // 提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
-  await formEl.validate();
-  const url = state.isEdit 
-    ? "http://localhost:8080/systemLog/update" 
-    : "http://localhost:8080/systemLog/add";
-  
-  try {
-    const res = await axios.post<ApiResponse>(url, state.form);
-    if (res.data.code === 0) {
-      ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
-      state.dialogFormVisible = false;
-      getData();
-    } else {
-      ElMessage.error(res.data.msg || (state.isEdit ? "修改失败" : "新增失败"));
+  await formEl.validate((valid) => {
+    if (!valid) {
+      ElMessage.error("请填写所有必填字段");
+      return;
     }
-  } catch (error) {
-    ElMessage.error("提交失败，请稍后重试");
-  }
+    const url = state.isEdit 
+      ? "http://localhost:8080/systemLog/update" 
+      : "http://localhost:8080/systemLog/add";
+    const formData = {
+      ...state.form,
+      operationTime: state.form.operationTime ? new Date(state.form.operationTime).toISOString() : null,
+    };
+    console.log("Submitting to:", url, "Method: POST", "Data:", formData); // 调试日志
+    axios.post<ApiResponse>(url, formData).then(res => {
+      if (res.data.code === 0) {
+        ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
+        state.dialogFormVisible = false;
+        getData();
+      } else {
+        ElMessage.error(res.data.msg || (state.isEdit ? "修改失败" : "新增失败"));
+      }
+    }).catch(error => {
+      console.error("Submit error:", error.response || error); // 详细错误日志
+      ElMessage.error("提交失败，请检查网络或服务器");
+    });
+  });
 };
 
 // 删除日志
@@ -382,7 +391,7 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const logIds = selectedRows.value.map(row => row.logId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/systemLog/batchDelete", { logIds });
+      const res = await axios.post<ApiResponse>("http://localhost:8080/systemLog/batchDelete", logIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个日志`);
         selectedRows.value = [];
@@ -441,13 +450,11 @@ onMounted(getData);
   line-height: 1.5;
 }
 
-/* 表格样式 */
 .el-table {
   background-color: #fff;
   border-radius: 8px;
 }
 
-/* 禁用表格内部滚动，让滚动事件传递到页面 */
 .el-table .el-table__body-wrapper {
   overflow: hidden !important;
 }
@@ -471,7 +478,6 @@ onMounted(getData);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* 统一按钮样式 */
 .custom-primary-button,
 .custom-batch-delete-button,
 .custom-edit-button {
@@ -523,4 +529,3 @@ onMounted(getData);
   }
 }
 </style>
-

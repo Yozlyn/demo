@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-container">
-    <!-- 概览卡片 -->
     <el-row :gutter="20" class="overview-cards">
       <el-col :xs="24" :sm="12" :md="6" v-for="(item, index) in overviewData" :key="index">
         <el-card shadow="hover" class="overview-card" :class="item.type">
@@ -23,9 +22,7 @@
       </el-col>
     </el-row>
 
-    <!-- 图表和排行 -->
     <el-row :gutter="20" style="margin-top: 20px;">
-      <!-- 趋势图 -->
       <el-col :xs="24" :lg="16">
         <el-card shadow="hover" class="chart-card">
           <template #header>
@@ -52,13 +49,12 @@
         </el-card>
       </el-col>
 
-      <!-- 排行榜 -->
       <el-col :xs="24" :lg="8">
         <el-card shadow="hover" class="ranking-card">
           <template #header>
             <div class="card-header">
               <span class="card-title">排行榜</span>
-              <el-select v-model="rankingType" size="small" @change="updateRanking">
+              <el-select v-model="rankingType" size="small" @change="updateRanking" style="width: 120px;">
                 <el-option label="商品" value="product"></el-option>
                 <el-option label="分类" value="category"></el-option>
                 <el-option label="销售员" value="salesperson"></el-option>
@@ -82,7 +78,6 @@
       </el-col>
     </el-row>
 
-    <!-- 数据表格 -->
     <el-row style="margin-top: 20px;">
       <el-col :span="24">
         <el-card shadow="hover" class="table-card">
@@ -137,7 +132,6 @@
             </el-table-column>
           </el-table>
 
-          <!-- 分页 -->
           <div class="pagination-container">
             <el-pagination
               v-model:current-page="currentPage"
@@ -207,8 +201,8 @@ const overviewData = ref([
 // 图表相关
 const chartType = ref('amount');
 const timePeriod = ref('30days');
-const mainChart = ref();
-const mainChartContainer = ref();
+const mainChart = ref<HTMLCanvasElement | null>(null);
+const mainChartContainer = ref<HTMLDivElement | null>(null);
 
 // 排行榜相关
 const rankingType = ref('product');
@@ -260,11 +254,18 @@ const updateChart = () => {
 
 // 绘制主图表
 const drawMainChart = () => {
-  if (!mainChart.value) return;
+  if (!mainChart.value || !mainChartContainer.value) return;
   
   const canvas = mainChart.value;
   const ctx = canvas.getContext('2d');
   
+  if (!ctx) return;
+  
+  // 确保 canvas 尺寸与容器一致
+  const containerWidth = mainChartContainer.value.offsetWidth;
+  canvas.width = containerWidth;
+  canvas.height = 350;
+
   // 清除画布
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
@@ -283,9 +284,12 @@ const generateChartData = () => {
   
   const data = [];
   for (let i = 0; i < days; i++) {
+    const value = chartType.value === 'amount' ? Math.random() * 10000 + 5000 : 
+                  chartType.value === 'orders' ? Math.floor(Math.random() * 100) + 20 : 
+                  Math.floor(Math.random() * 50) + 10;
     data.push({
       date: new Date(Date.now() - (days - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      value: Math.random() * 10000 + 5000
+      value: Math.round(value)
     });
   }
   return data;
@@ -297,9 +301,19 @@ const drawLineChart = (ctx: CanvasRenderingContext2D, data: any[], width: number
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
   
+  if (data.length <= 1) {
+    // 数据点不足，无法绘制折线
+    return;
+  }
+
   // 找出最大值和最小值
-  const maxValue = Math.max(...data.map(d => d.value));
-  const minValue = Math.min(...data.map(d => d.value));
+  const values = data.map(d => d.value);
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+
+  const valueRange = maxValue - minValue;
+  const yScale = chartHeight / (valueRange === 0 ? 1 : valueRange);
+  const xScale = chartWidth / (data.length - 1);
   
   // 绘制坐标轴
   ctx.strokeStyle = '#e4e7ed';
@@ -309,15 +323,15 @@ const drawLineChart = (ctx: CanvasRenderingContext2D, data: any[], width: number
   ctx.lineTo(padding, height - padding);
   ctx.lineTo(width - padding, height - padding);
   ctx.stroke();
-  
+
   // 绘制数据线
   ctx.strokeStyle = '#409eff';
   ctx.lineWidth = 2;
   ctx.beginPath();
   
   data.forEach((point, index) => {
-    const x = padding + (index / (data.length - 1)) * chartWidth;
-    const y = height - padding - ((point.value - minValue) / (maxValue - minValue)) * chartHeight;
+    const x = padding + index * xScale;
+    const y = height - padding - (point.value - minValue) * yScale;
     
     if (index === 0) {
       ctx.moveTo(x, y);
@@ -331,12 +345,34 @@ const drawLineChart = (ctx: CanvasRenderingContext2D, data: any[], width: number
   // 绘制数据点
   ctx.fillStyle = '#409eff';
   data.forEach((point, index) => {
-    const x = padding + (index / (data.length - 1)) * chartWidth;
-    const y = height - padding - ((point.value - minValue) / (maxValue - minValue)) * chartHeight;
+    const x = padding + index * xScale;
+    const y = height - padding - (point.value - minValue) * yScale;
     
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, 2 * Math.PI);
     ctx.fill();
+  });
+
+  // 绘制坐标轴刻度与标签
+  ctx.fillStyle = '#606266';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  
+  const yAxisTicks = 5;
+  for (let i = 0; i <= yAxisTicks; i++) {
+    const value = minValue + (valueRange / yAxisTicks) * i;
+    const y = height - padding - (value - minValue) * yScale;
+    ctx.fillText(Math.round(value).toString(), padding - 5, y);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  data.forEach((point, index) => {
+    if (index % Math.floor(data.length / 5) === 0 || index === data.length - 1) {
+      const x = padding + index * xScale;
+      ctx.fillText(point.date.substring(5), x, height - padding + 5);
+    }
   });
 };
 
@@ -400,6 +436,8 @@ const exportData = () => {
 onMounted(() => {
   loadTableData();
   updateChart();
+  // 监听窗口大小变化，以重新调整图表大小
+  window.addEventListener('resize', updateChart);
 });
 </script>
 
@@ -537,6 +575,7 @@ onMounted(() => {
 
 .ranking-number {
   width: 24px;
+  min-width: 24px;
   height: 24px;
   border-radius: 50%;
   background-color: #f0f2f5;
@@ -565,30 +604,36 @@ onMounted(() => {
 
 .ranking-info {
   flex-grow: 1;
+  min-width: 0;
 }
 
 .ranking-name {
   font-weight: bold;
   color: #303133;
+  word-break: break-all;
 }
 
 .ranking-desc {
   font-size: 12px;
   color: #909399;
+  word-break: break-all;
 }
 
 .ranking-value {
   text-align: right;
+  margin-left: 10px;
 }
 
 .ranking-value .value {
   font-weight: bold;
   color: #303133;
+  white-space: nowrap;
 }
 
 .ranking-value .percentage {
   font-size: 12px;
   color: #909399;
+  white-space: nowrap;
 }
 
 /* 表格 */
@@ -641,6 +686,17 @@ onMounted(() => {
     margin-left: 0 !important;
     margin-right: 0 !important;
   }
+  .ranking-item {
+    flex-wrap: wrap;
+  }
+  .ranking-info {
+    flex-basis: 100%;
+    margin-top: 5px;
+  }
+  .ranking-value {
+    flex-basis: 100%;
+    text-align: left;
+    margin-left: 34px;
+  }
 }
 </style>
-

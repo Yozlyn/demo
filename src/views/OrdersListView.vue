@@ -1,6 +1,5 @@
 <template>
   <div class="users-container">
-    <!-- 顶部筛选和操作 -->
     <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div class="search-bar">
         <el-input
@@ -40,7 +39,6 @@
       </div>
     </div>
 
-    <!-- 订单数据表格 -->
     <el-row>
       <el-col :span="24">
         <el-card shadow="hover" class="table-card">
@@ -92,7 +90,6 @@
             </el-table-column>
           </el-table>
 
-          <!-- 分页 -->
           <div class="pagination-container">
             <el-pagination
               v-model:current-page="state.pageNum"
@@ -108,7 +105,6 @@
       </el-col>
     </el-row>
 
-    <!-- 表单弹窗 -->
     <el-dialog v-model="state.dialogFormVisible" :title="state.dialogTitle" width="600">
       <el-form :model="state.form" ref="ruleFormRef" :rules="rules">
         <el-form-item 
@@ -137,9 +133,9 @@
         <el-form-item label="订单日期" :label-width="state.formLabelWidth" prop="orderDate">
           <el-date-picker
             v-model="state.form.orderDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="选择日期"
+            type="datetime" 
+            value-format="YYYY-MM-DD HH:mm:ss" 
+            placeholder="选择日期和时间"
             style="width: 100%"
           ></el-date-picker>
         </el-form-item>
@@ -219,7 +215,7 @@ const state = reactive({
   pageSize: 10,
   total: 0,
   form: {
-    orderId: "",
+    orderId: null,
     orderNo: "",
     customerName: "",
     productName: "",
@@ -227,7 +223,16 @@ const state = reactive({
     totalAmount: 0,
     orderDate: "",
     status: "",
-  } as OrderForm,
+  } as {
+    orderId: string | null;
+    orderNo: string;
+    customerName: string;
+    productName: string;
+    quantity: number;
+    totalAmount: number;
+    orderDate: string;
+    status: string;
+  },
 });
 
 // 表单校验规则
@@ -255,7 +260,7 @@ const rules = reactive({
   ],
 });
 
-// 过滤数据
+// 过滤数据 (注意：这是前端过滤，只对当前页数据生效)
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
     const searchMatch = item.orderNo.includes(searchQuery.value) || 
@@ -293,7 +298,7 @@ const getStatusText = (status: string) => {
 // 获取订单数据
 const getData = () => {
   tableLoading.value = true;
-  axios.get<PageResponse>("http://localhost:8080/orderStatistic/page", {
+  axios.get<PageResponse>("http://localhost:8080/orderList/page", {
     params: {
       pageNum: state.pageNum,
       pageSize: state.pageSize,
@@ -318,7 +323,7 @@ const handleAdd = () => {
   state.dialogTitle = "新增订单";
   state.dialogFormVisible = true;
   state.form = {
-    orderId: "",
+    orderId: null,
     orderNo: "",
     customerName: "",
     productName: "",
@@ -342,9 +347,11 @@ const handleEdit = (row: Order) => {
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
+  // --- 修改开始: 修正API路径 ---
   const url = state.isEdit 
-    ? "http://localhost:8080/order/update" 
-    : "http://localhost:8080/order/add";
+    ? "http://localhost:8080/orderList/update" 
+    : "http://localhost:8080/orderList/add";
+  // --- 修改结束 ---
   
   try {
     const res = await axios.post<ApiResponse>(url, state.form);
@@ -372,9 +379,11 @@ const handleDelete = (row: Order) => {
     }
   ).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/order/delete", { 
+      // --- 修改开始: 修正API路径 ---
+      const res = await axios.post<ApiResponse>("http://localhost:8080/orderList/delete", { 
         orderId: row.orderId 
       });
+      // --- 修改结束 ---
       
       if (res.data.code === 0) {
         ElMessage.success("删除成功");
@@ -404,7 +413,9 @@ const handleBatchDelete = async () => {
   }).then(async () => {
     try {
       const orderIds = selectedRows.value.map(row => row.orderId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/order/batchDelete", { orderIds });
+      // --- 修改开始: 修正API路径 ---
+      const res = await axios.post<ApiResponse>("http://localhost:8080/orderList/batchDelete", { orderIds });
+      // --- 修改结束 ---
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个订单`);
         selectedRows.value = [];

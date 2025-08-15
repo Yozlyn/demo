@@ -368,8 +368,8 @@ const handleBatchDelete = async () => {
     confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
   }).then(async () => {
     try {
-      const suIds = selectedRows.value.map(row => row.suId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/sysUser/batchDelete", { suIds });
+      const suIds = selectedRows.value.map(row => (row.suId));
+      const res = await axios.post<ApiResponse>("http://localhost:8080/sysUser/batchDelete", suIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个用户`);
         selectedRows.value = [];

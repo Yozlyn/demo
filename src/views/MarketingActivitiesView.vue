@@ -386,8 +386,8 @@ const handleBatchDelete = async () => {
     confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
   }).then(async () => {
     try {
-      const activityIds = selectedRows.value.map(row => row.activityId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingActivity/batchDelete", { activityIds });
+      const activityIds = selectedRows.value.map(row => (row.activityId));
+      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingActivity/batchDelete", activityIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个活动`);
         selectedRows.value = [];

@@ -399,8 +399,8 @@ const handleBatchDelete = async () => {
     confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
   }).then(async () => {
     try {
-      const couponIds = selectedRows.value.map(row => row.couponId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingCoupon/batchDelete", { couponIds });
+      const couponIds = selectedRows.value.map(row => (row.couponId));
+      const res = await axios.post<ApiResponse>("http://localhost:8080/marketingCoupon/batchDelete", couponIds);
       if (res.data.code === 0) {
         ElMessage.success(`成功删除${selectedRows.value.length}个优惠券`);
         selectedRows.value = [];
