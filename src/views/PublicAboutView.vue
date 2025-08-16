@@ -38,7 +38,7 @@
         </el-col>
         <el-col :span="12">
           <div class="intro-image">
-            <img src="/contact/contact1.jpg" alt="公司介绍" />
+            <img src="/contact/contact1.png" alt="公司介绍" />
           </div>
         </el-col>
       </el-row>
@@ -53,7 +53,7 @@
         <el-col :span="8">
           <el-card class="culture-card">
             <div class="culture-icon">
-              <el-icon size="48" color="#409EFF"><Target /></el-icon>
+              <el-icon size="48" color="#409EFF"><Aim /></el-icon>
             </div>
             <h3>企业使命</h3>
             <p>为教育现代化提供优质装备，让每个孩子都能享受到先进的教学环境</p>
@@ -162,12 +162,12 @@
 
 <script>
 import { ref } from 'vue'
-import { Target, View, Star, Trophy, UserFilled } from '@element-plus/icons-vue'
+import { Aim, View, Star, Trophy, UserFilled } from '@element-plus/icons-vue'
 
 export default {
   name: 'About',
   components: {
-    Target,
+    Aim,
     View,
     Star,
     Trophy,
@@ -225,7 +225,7 @@ export default {
     return {
       honors,
       teamMembers,
-      Target,
+      Aim,
       View,
       Star,
       Trophy,
@@ -238,24 +238,6 @@ export default {
 <style scoped>
 .about {
   min-height: 100vh;
-}
-
-.page-header {
-  text-align: center;
-  margin-bottom: 60px;
-  padding: 60px 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.page-header h1 {
-  font-size: 36px;
-  margin-bottom: 15px;
-}
-
-.page-header p {
-  font-size: 18px;
-  opacity: 0.9;
 }
 
 .company-intro, .company-culture, .company-history, .company-honors, .team-intro {
@@ -437,14 +419,6 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .page-header {
-    padding: 40px 20px;
-  }
-  
-  .page-header h1 {
-    font-size: 24px;
-  }
-  
   .company-intro, .company-culture, .company-history, .company-honors, .team-intro {
     padding: 40px 15px;
   }
@@ -456,6 +430,36 @@ export default {
   
   .intro-content, .intro-image {
     margin-bottom: 30px;
+  }
+}
+
+/* --- 页面头部样式 --- */
+.page-header {
+  text-align: center;
+  margin-bottom: 60px;
+  padding: 60px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.page-header h1 {
+  font-size: 36px;
+  margin-bottom: 15px;
+}
+
+.page-header p {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    padding: 40px 20px;
+    margin-bottom: 40px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
   }
 }
 </style>

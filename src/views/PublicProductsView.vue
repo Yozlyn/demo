@@ -1,321 +1,268 @@
 <template>
-  <div class="products">
-    <!-- 页面头部 -->
+  <div class="products-page">
     <div class="page-header">
       <h1>教育装备产品</h1>
       <p>为教育机构提供全方位的教学设备解决方案</p>
     </div>
 
-    <!-- 筛选区域 -->
-    <div class="filter-section">
-      <el-row :gutter="20">
-        <el-col :span="6">
-          <el-select v-model="selectedCategory" placeholder="选择分类" @change="filterProducts">
-            <el-option label="全部分类" value=""></el-option>
-            <el-option label="多媒体设备" value="多媒体设备"></el-option>
-            <el-option label="教学设备" value="教学设备"></el-option>
-            <el-option label="实验设备" value="实验设备"></el-option>
-            <el-option label="家具设备" value="家具设备"></el-option>
-          </el-select>
-        </el-col>
-        <el-col :span="6">
-          <el-select v-model="priceRange" placeholder="价格范围" @change="filterProducts">
-            <el-option label="全部价格" value=""></el-option>
-            <el-option label="1000元以下" value="0-1000"></el-option>
-            <el-option label="1000-5000元" value="1000-5000"></el-option>
-            <el-option label="5000-10000元" value="5000-10000"></el-option>
-            <el-option label="10000元以上" value="10000-999999"></el-option>
-          </el-select>
-        </el-col>
-        <el-col :span="12">
-          <el-input v-model="searchKeyword" placeholder="搜索产品名称..." @input="filterProducts">
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-      </el-row>
-    </div>
+    <div class="main-container">
+      <section class="content-wrapper acrylic-section reveal-section">
+        
+        <div class="filter-area">
+          <el-row :gutter="20" align="middle">
+            <el-col :span="6">
+              <el-select v-model="selectedCategory" placeholder="选择分类" style="width: 100%;">
+                <el-option label="全部分类" value=""></el-option>
+                <el-option label="多媒体设备" value="多媒体设备"></el-option>
+                <el-option label="教学设备" value="教学设备"></el-option>
+                <el-option label="实验设备" value="实验设备"></el-option>
+                <el-option label="家具设备" value="家具设备"></el-option>
+              </el-select>
+            </el-col>
+            <el-col :span="6">
+              <el-select v-model="priceRange" placeholder="价格范围" style="width: 100%;">
+                <el-option label="全部价格" value=""></el-option>
+                <el-option label="1000元以下" value="0-1000"></el-option>
+                <el-option label="1000-5000元" value="1000-5000"></el-option>
+                <el-option label="5000-10000元" value="5000-10000"></el-option>
+                <el-option label="10000元以上" value="10000-999999"></el-option>
+              </el-select>
+            </el-col>
+            <el-col :span="12">
+              <el-input v-model="searchKeyword" placeholder="搜索产品名称...">
+                <template #prefix>
+                  <el-icon><Search /></el-icon>
+                </template>
+              </el-input>
+            </el-col>
+          </el-row>
+        </div>
 
-    <!-- 产品列表 -->
-    <div class="products-grid">
-      <el-row :gutter="20">
-        <el-col :span="6" v-for="product in filteredProducts" :key="product.id">
-          <el-card class="product-card" :body-style="{ padding: '0px' }">
-            <img :src="product.image" class="product-image" />
-            <div class="product-info">
-              <div class="product-header">
-                <h3>{{ product.name }}</h3>
-                <el-tag size="small" :type="product.tagType">{{ product.category }}</el-tag>
-              </div>
-              <p class="product-description">{{ product.description }}</p>
-              <div class="product-specs">
-                <div class="spec-item" v-for="spec in product.specs" :key="spec.name">
-                  <span class="spec-name">{{ spec.name }}:</span>
-                  <span class="spec-value">{{ spec.value }}</span>
+        <div class="products-grid">
+          <el-row :gutter="30">
+            <el-col :span="6" v-for="product in paginatedProducts" :key="product.id">
+              <el-card class="product-card" :body-style="{ padding: '0px' }">
+                <img :src="product.image" class="product-image" />
+                <div class="product-info">
+                  <div class="product-header">
+                    <h3>{{ product.name }}</h3>
+                    <el-tag size="small" :type="product.tagType">{{ product.category }}</el-tag>
+                  </div>
+                  <p class="product-description">{{ product.description }}</p>
+                  <div class="product-rating">
+                    <el-rate v-model="product.rating" disabled show-score text-color="#ff9900" />
+                  </div>
+                  <div class="product-footer">
+                    <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      :icon="ShoppingCart" 
+                      class="buy-btn"
+                      @click="cartStore.addItem(product.id)"
+                    >
+                      加入购物车
+                    </el-button>
+                  </div>
                 </div>
-              </div>
-              <div class="product-rating">
-                <el-rate v-model="product.rating" disabled show-score />
-                <span class="sales-count">(已售{{ product.sales }}件)</span>
-              </div>
-              <div class="product-footer">
-                <div class="price-info">
-                  <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
-                  <span class="original-price" v-if="product.originalPrice">¥{{ product.originalPrice.toLocaleString() }}</span>
-                </div>
-                <div class="action-buttons">
-                  <el-button type="primary" size="small" :icon="ShoppingCart">
-                    加入购物车
-                  </el-button>
-                  <el-button type="success" size="small">
-                    立即购买
-                  </el-button>
-                </div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+        
+      </section>
 
-    <!-- 分页 -->
-    <div class="pagination-section">
-      <el-pagination
-        v-model:current-page="currentPage"
-        :page-size="pageSize"
-        :total="totalProducts"
-        layout="prev, pager, next, jumper"
-        @current-change="handlePageChange"
-      />
+      <div class="pagination-section">
+        <el-pagination
+          v-if="filteredProducts.length > pageSize"
+          v-model:current-page="currentPage"
+          :page-size="pageSize"
+          :total="filteredProducts.length"
+          layout="prev, pager, next, jumper"
+          background
+          @current-change="handlePageChange"
+        />
+        <el-empty v-if="filteredProducts.length === 0" description="没有找到符合条件的产品" />
+      </div>
     </div>
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted } from 'vue'
-import { Search, ShoppingCart } from '@element-plus/icons-vue'
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useCartStore } from '@/stores/cart';
+import { Search, ShoppingCart } from '@element-plus/icons-vue';
+import debounce from 'lodash.debounce';
 
-export default {
-  name: 'Products',
-  components: {
-    Search,
-    ShoppingCart
-  },
-  setup() {
-    const selectedCategory = ref('')
-    const priceRange = ref('')
-    const searchKeyword = ref('')
-    const currentPage = ref(1)
-    const pageSize = ref(12)
+const route = useRoute();
+const cartStore = useCartStore();
 
-    const allProducts = ref([
-      {
-        id: 1,
-        name: '智能交互白板',
-        price: 8999,
-        originalPrice: 9999,
-        rating: 4.8,
-        sales: 156,
-        image: '/src/assets/home/product1.webp',
-        category: '多媒体设备',
-        tagType: 'success',
-        description: '支持多点触控，内置教学软件，提升课堂互动体验',
-        specs: [
-          { name: '尺寸', value: '86英寸' },
-          { name: '分辨率', value: '4K超高清' },
-          { name: '触控点数', value: '20点触控' }
-        ]
-      },
-      {
-        id: 2,
-        name: '教学一体机',
-        price: 12999,
-        originalPrice: 14999,
-        rating: 4.9,
-        sales: 89,
-        image: '/src/assets/home/product2.jpg',
-        category: '教学设备',
-        tagType: 'primary',
-        description: '集投影、音响、电脑于一体的现代化教学设备',
-        specs: [
-          { name: '投影亮度', value: '4000流明' },
-          { name: '处理器', value: 'Intel i5' },
-          { name: '内存', value: '8GB DDR4' }
-        ]
-      },
-      {
-        id: 3,
-        name: '学生实验桌',
-        price: 1299,
-        originalPrice: 1599,
-        rating: 4.7,
-        sales: 234,
-        image: '/src/assets/home/product1.webp',
-        category: '实验设备',
-        tagType: 'warning',
-        description: '符合人体工程学设计，安全环保材质制造',
-        specs: [
-          { name: '材质', value: '实木+钢架' },
-          { name: '尺寸', value: '120x60x75cm' },
-          { name: '承重', value: '≤100kg' }
-        ]
-      },
-      {
-        id: 4,
-        name: '多媒体讲台',
-        price: 3599,
-        originalPrice: 4299,
-        rating: 4.6,
-        sales: 67,
-        image: '/src/assets/home/product2.jpg',
-        category: '教学设备',
-        tagType: 'info',
-        description: '集成多种教学设备控制功能的智能讲台',
-        specs: [
-          { name: '材质', value: '钢木结构' },
-          { name: '功能', value: '设备集成控制' },
-          { name: '尺寸', value: '120x60x110cm' }
-        ]
-      },
-      {
-        id: 5,
-        name: '科学实验套装',
-        price: 899,
-        originalPrice: 1199,
-        rating: 4.8,
-        sales: 345,
-        image: '/src/assets/home/product1.webp',
-        category: '实验设备',
-        tagType: 'success',
-        description: '涵盖物理、化学、生物等多学科实验器材',
-        specs: [
-          { name: '套装内容', value: '200+实验器材' },
-          { name: '适用年级', value: '小学-高中' },
-          { name: '学科', value: '理化生' }
-        ]
-      },
-      {
-        id: 6,
-        name: '录播教室系统',
-        price: 25999,
-        originalPrice: 29999,
-        rating: 4.9,
-        sales: 23,
-        image: '/src/assets/home/product2.jpg',
-        category: '多媒体设备',
-        tagType: 'danger',
-        description: '自动跟踪录制，支持远程教学和课程回放',
-        specs: [
-          { name: '录制格式', value: '1080P高清' },
-          { name: '存储容量', value: '2TB' },
-          { name: '网络功能', value: '支持直播推流' }
-        ]
-      },
-      {
-        id: 7,
-        name: '学生课桌椅',
-        price: 299,
-        originalPrice: 399,
-        rating: 4.5,
-        sales: 567,
-        image: '/src/assets/home/product1.webp',
-        category: '家具设备',
-        tagType: 'primary',
-        description: '可调节高度，符合学生身体发育需求',
-        specs: [
-          { name: '材质', value: 'ABS+钢管' },
-          { name: '高度调节', value: '6档可调' },
-          { name: '承重', value: '≤80kg' }
-        ]
-      },
-      {
-        id: 8,
-        name: '图书管理系统',
-        price: 15999,
-        originalPrice: 18999,
-        rating: 4.7,
-        sales: 45,
-        image: '/src/assets/home/product2.jpg',
-        category: '管理系统',
-        tagType: 'warning',
-        description: '智能化图书借阅管理，提高图书馆运营效率',
-        specs: [
-          { name: '支持图书', value: '10万册' },
-          { name: '用户数量', value: '5000人' },
-          { name: '功能模块', value: '借还、查询、统计' }
-        ]
-      }
-    ])
+const selectedCategory = ref('');
+const priceRange = ref('');
+const searchKeyword = ref(route.query.search || '');
+const currentPage = ref(1);
+const pageSize = ref(8);
 
-    const filteredProducts = computed(() => {
-      let products = allProducts.value
+const allProducts = ref([
+    { id: 'P001', name: '智能交互白板', price: 8999, originalPrice: 9999, rating: 4.8, sales: 156, image: '/hots/hot1.png', category: '多媒体设备', tagType: 'success', description: '支持多点触控，内置教学软件，提升课堂互动体验' },
+    { id: 'P002', name: '教学一体机', price: 12999, originalPrice: 14999, rating: 4.9, sales: 89, image: '/hots/hot2.png', category: '教学设备', tagType: 'primary', description: '集投影、音响、电脑于一体的现代化教学设备' },
+    { id: 'P003', name: '学生实验桌', price: 1299, originalPrice: 1599, rating: 4.7, sales: 234, image: '/hots/hot3.png', category: '实验设备', tagType: 'warning', description: '符合人体工程学设计，安全环保材质制造' },
+    { id: 'P004', name: '多媒体讲台', price: 3599, originalPrice: 4299, rating: 4.6, sales: 67, image: '/hots/hot4.png', category: '教学设备', tagType: 'info', description: '集成多种教学设备控制功能的智能讲台' },
+    { id: 'P101', name: '4K超高清教学一体机', price: 15999, rating: 4.9, image: '/newnew/new1.png', category: '教学设备', tagType: 'primary', description: '4K分辨率+120Hz刷新率，支持40点触控' },
+    { id: 'P102', name: '便携式科学实验箱', price: 2499, rating: 4.7, image: '/newnew/new2.png', category: '实验设备', tagType: 'success', description: '包含200+实验器材，符合初中科学课程标准' },
+    { id: 'P103', name: 'AI智能录播系统', price: 29999, rating: 4.8, image: '/newnew/new3.png', category: '多媒体设备', tagType: 'warning', description: '自动跟踪教师移动，智能聚焦板书内容' },
+    { id: 'P104', name: '人体工学学生椅', price: 899, rating: 4.6, image: '/newnew/new4.png', category: '家具设备', tagType: 'info', description: '可调节高度与靠背角度，预防脊柱侧弯' },
+]);
 
-      // 分类筛选
-      if (selectedCategory.value) {
-        products = products.filter(p => p.category === selectedCategory.value)
-      }
+const filteredProducts = ref([...allProducts.value]);
 
-      // 价格筛选
-      if (priceRange.value) {
-        const [min, max] = priceRange.value.split('-').map(Number)
-        products = products.filter(p => p.price >= min && p.price <= max)
-      }
-
-      // 关键词搜索
-      if (searchKeyword.value) {
-        products = products.filter(p => 
-          p.name.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
-          p.description.toLowerCase().includes(searchKeyword.value.toLowerCase())
-        )
-      }
-
-      return products
-    })
-
-    const totalProducts = computed(() => filteredProducts.value.length)
-
-    const filterProducts = () => {
-      currentPage.value = 1
+const filterProducts = () => {
+    let products = allProducts.value;
+    if (selectedCategory.value) {
+        products = products.filter(p => p.category === selectedCategory.value);
     }
-
-    const handlePageChange = (page) => {
-      currentPage.value = page
+    if (priceRange.value) {
+        const [min, max] = priceRange.value.split('-').map(Number);
+        products = products.filter(p => p.price >= min && p.price <= max);
     }
-
-    return {
-      selectedCategory,
-      priceRange,
-      searchKeyword,
-      currentPage,
-      pageSize,
-      allProducts,
-      filteredProducts,
-      totalProducts,
-      filterProducts,
-      handlePageChange,
-      Search,
-      ShoppingCart
+    if (searchKeyword.value) {
+        products = products.filter(p => p.name.toLowerCase().includes(searchKeyword.value.toLowerCase()));
     }
-  }
-}
+    filteredProducts.value = products;
+    currentPage.value = 1;
+};
+
+// 使用 watch 监听筛选条件的变化
+watch([selectedCategory, priceRange], filterProducts);
+// 对搜索关键词使用防抖，优化性能
+watch(searchKeyword, debounce(filterProducts, 300));
+
+
+const paginatedProducts = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value;
+    const end = currentPage.value * pageSize.value;
+    return filteredProducts.value.slice(start, end);
+});
+
+const handlePageChange = (page) => {
+    currentPage.value = page;
+    window.scrollTo({ top: 300, behavior: 'smooth' }); // 翻页后平滑滚动到列表顶部
+};
+
+onMounted(() => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  setTimeout(() => {
+    document.querySelectorAll('.reveal-section').forEach(section => {
+      observer.observe(section);
+    });
+  }, 100);
+});
 </script>
 
 <style scoped>
-.products {
+.products-page {
+  background-color: #f8f9fa;
   min-height: 100vh;
+}
+/* page-header 和 main-container 的样式已移至全局 main.css */
+
+/* 【修改点1】取消了负边距，让它不再层叠 */
+.filter-area {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* 在容器内增加分割线 */
 }
 
+/* 【修改点2】产品列表现在是容器的一部分 */
+.products-grid {
+  padding-top: 40px; /* 增加与筛选区域的间距 */
+}
+
+.product-card {
+  /* 【修改点3】增加了底部外边距，让行间距更舒适 */
+  margin-bottom: 40px; 
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff; /* 确保卡片有白色背景 */
+}
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px G30px rgba(0, 0, 0, 0.1);
+}
+.product-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+.product-info {
+  padding: 20px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.product-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.product-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 15px;
+  flex-grow: 1; 
+  min-height: 50px;
+}
+.product-rating {
+  margin-bottom: 15px;
+}
+.product-footer {
+  margin-top: auto; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.product-price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #F56C6C;
+}
+.buy-btn {
+  background-color: #FFA500;
+  border-color: #FFA500;
+}
+.pagination-section {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+/* --- 页面头部样式 --- */
 .page-header {
   text-align: center;
-  margin-bottom: 40px;
-  padding: 40px 0;
+  margin-bottom: 60px;
+  padding: 60px 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 8px;
 }
 
 .page-header h1 {
@@ -328,151 +275,15 @@ export default {
   opacity: 0.9;
 }
 
-.filter-section {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.products-grid {
-  margin-bottom: 40px;
-}
-
-.product-card {
-  margin-bottom: 20px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 100%;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.product-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-.product-info {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - 200px);
-}
-
-.product-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.product-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.product-description {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 15px;
-  line-height: 1.4;
-  flex-grow: 1;
-}
-
-.product-specs {
-  margin-bottom: 15px;
-}
-
-.spec-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-
-.spec-name {
-  color: #999;
-}
-
-.spec-value {
-  color: #333;
-  font-weight: 500;
-}
-
-.product-rating {
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sales-count {
-  font-size: 12px;
-  color: #999;
-}
-
-.product-footer {
-  margin-top: auto;
-}
-
-.price-info {
-  margin-bottom: 15px;
-}
-
-.product-price {
-  font-size: 20px;
-  font-weight: bold;
-  color: #409EFF;
-  margin-right: 10px;
-}
-
-.original-price {
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.action-buttons .el-button {
-  flex: 1;
-}
-
-.pagination-section {
-  display: flex;
-  justify-content: center;
-  padding: 20px 0;
-}
-
 @media (max-width: 768px) {
-  .products {
-    padding: 15px;
-  }
-  
   .page-header {
-    padding: 20px 0;
+    padding: 40px 20px;
+    margin-bottom: 40px;
   }
   
   .page-header h1 {
     font-size: 24px;
   }
-  
-  .filter-section .el-row {
-    flex-direction: column;
-  }
-  
-  .filter-section .el-col {
-    margin-bottom: 15px;
-  }
 }
-</style>
 
+</style>

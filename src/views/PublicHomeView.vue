@@ -82,8 +82,14 @@
                 </div>
                 <div class="product-footer">
                   <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
-                  <el-button type="primary" size="small" :icon="ShoppingCart" class="buy-btn">
-                    立即购买
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    :icon="ShoppingCart" 
+                    class="buy-btn"
+                    @click="cartStore.addItem(product.id)"
+                  >
+                    加入购物车
                   </el-button>
                 </div>
               </div>
@@ -97,6 +103,7 @@
           </el-button>
         </div>
       </section>
+
 
       <section class="section cases-section reveal-section acrylic-section">
         <div class="section-header">
@@ -218,14 +225,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, markRaw } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import { useCartStore } from '@/stores/cart';
 import {
   ShoppingCart, Trophy, Tools, Headset, ArrowRight, User, Calendar, View
 } from '@element-plus/icons-vue';
 
 const router = useRouter();
+const cartStore = useCartStore();
 
 // --- 响应式状态定义 ---
 const featureHoverIndex = ref(-1);
@@ -237,16 +246,16 @@ const banners = ref([
   { image: '/home/banner3.png', title: '多媒体教学', description: '打造互动式多媒体教学环境，让知识传递更高效、更生动', buttonText: '立即咨询', path: '/contact' }
 ]);
 const newProducts = ref([
-  { id: 101, name: '4K超高清教学一体机', price: 15999, originalPrice: 17999, rating: 4.9, image: '/newnew/new1.png', category: '教学设备', tagType: 'primary', description: '4K分辨率+120Hz刷新率，支持40点触控' },
-  { id: 102, name: '便携式科学实验箱', price: 2499, rating: 4.7, image: '/newnew/new2.png', category: '实验设备', tagType: 'success', description: '包含200+实验器材，符合初中科学课程标准' },
-  { id: 103, name: 'AI智能录播系统', price: 29999, originalPrice: 32999, rating: 4.8, image: '/newnew/new3.png', category: '多媒体设备', tagType: 'warning', description: '自动跟踪教师移动，智能聚焦板书内容' },
-  { id: 104, name: '人体工学学生椅', price: 899, rating: 4.6, image: '/newnew/new4.png', category: '家具设备', tagType: 'info', description: '可调节高度与靠背角度，预防脊柱侧弯' }
+  { id: 'P101', name: '4K超高清教学一体机', price: 15999, originalPrice: 17999, rating: 4.9, image: '/newnew/new1.png', category: '教学设备', tagType: 'primary', description: '4K分辨率+120Hz刷新率，支持40点触控' },
+  { id: 'P102', name: '便携式科学实验箱', price: 2499, rating: 4.7, image: '/newnew/new2.png', category: '实验设备', tagType: 'success', description: '包含200+实验器材，符合初中科学课程标准' },
+  { id: 'P103', name: 'AI智能录播系统', price: 29999, originalPrice: 32999, rating: 4.8, image: '/newnew/new3.png', category: '多媒体设备', tagType: 'warning', description: '自动跟踪教师移动，智能聚焦板书内容' },
+  { id: 'P104', name: '人体工学学生椅', price: 899, rating: 4.6, image: '/newnew/new4.png', category: '家具设备', tagType: 'info', description: '可调节高度与靠背角度，预防脊柱侧弯' }
 ]);
 const products = ref([
-  { id: 1, name: '智能交互白板', price: 8999, rating: 4.8, image: '/hots/hot1.png', category: '多媒体设备', tagType: 'success', description: '支持多点触控，内置教学软件' },
-  { id: 2, name: '教学一体机', price: 12999, rating: 4.9, image: '/hots/hot2.png', category: '教学设备', tagType: 'primary', description: '集投影、音响、电脑于一体' },
-  { id: 3, name: '学生实验桌', price: 1299, rating: 4.7, image: '/hots/hot3.png', category: '实验设备', tagType: 'warning', description: '符合人体工程学设计，安全环保' },
-  { id: 4, name: '多媒体讲台', price: 3599, rating: 4.6, image: '/hots/hot4.png', category: '讲台设备', tagType: 'info', description: '集成多种教学设备控制功能' }
+  { id: 'P001', name: '智能交互白板', price: 8999, rating: 4.8, image: '/hots/hot1.png', category: '多媒体设备', tagType: 'success', description: '支持多点触控，内置教学软件' },
+  { id: 'P002', name: '教学一体机', price: 12999, rating: 4.9, image: '/hots/hot2.png', category: '教学设备', tagType: 'primary', description: '集投影、音响、电脑于一体' },
+  { id: 'P003', name: '学生实验桌', price: 1299, rating: 4.7, image: '/hots/hot3.png', category: '实验设备', tagType: 'warning', description: '符合人体工程学设计，安全环保' },
+  { id: 'P004', name: '多媒体讲台', price: 3599, rating: 4.6, image: '/hots/hot4.png', category: '讲台设备', tagType: 'info', description: '集成多种教学设备控制功能的智能讲台' }
 ]);
 const cases = ref([
   { school: '北京市第一中学', image: '/success/success1.png', category: '多媒体教室改造', description: '完成30间教室的多媒体设备升级，实现智能教学全覆盖', studentCount: 2800, cooperationYear: 2023 },
@@ -259,10 +268,12 @@ const latestNews = ref([
   { title: '实验室安全管理规范与设备维护指南', summary: '详解实验室设备的日常维护要点与安全管理规范...', date: '2025-03-10', category: '设备维护' }
 ]);
 const features = ref([
-  { icon: Trophy, title: '品质保证', description: '所有产品均通过国家质量认证，提供可靠保障' },
-  { icon: Tools, title: '专业服务', description: '提供从选型到安装调试的全程专业服务支持' },
-  { icon: Headset, title: '售后无忧', description: '7x24小时客服支持，完善的售后服务体系' }
+  // 用 markRaw 包裹每个图标组件
+  { icon: markRaw(Trophy), title: '品质保证', description: '所有产品均通过国家质量认证，提供可靠保障' },
+  { icon: markRaw(Tools), title: '专业服务', description: '提供从选型到安装调试的全程专业服务支持' },
+  { icon: markRaw(Headset), title: '售后无忧', description: '7x24小时客服支持，完善的售后服务体系' }
 ]);
+
 const partners = ref([
   { name: '北京大学', logo: '/university/beijing.png' },
   { name: '复旦大学', logo: '/university/fudan.png' },

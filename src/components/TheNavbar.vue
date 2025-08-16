@@ -8,7 +8,6 @@
         </router-link>
       </div>
     </div>
-
     <div class="nav-right">
       <div class="search-container">
         <el-input
@@ -22,7 +21,6 @@
           </template>
         </el-input>
       </div>
-
       <div class="manual-nav">
         <router-link to="/" class="nav-link">
           <el-icon><House /></el-icon>
@@ -33,7 +31,7 @@
           <span>商品</span>
         </router-link>
         <router-link to="/about" class="nav-link">
-          <el-icon><InfoFilled /></el-icon>
+          <el-icon><Star /></el-icon>
           <span>关于我们</span>
         </router-link>
         <router-link to="/contact" class="nav-link">
@@ -41,18 +39,21 @@
           <span>联系我们</span>
         </router-link>
       </div>
-
       <div class="nav-actions">
         <el-button type="info" :icon="ShoppingCart" class="cart-btn" circle>
-          <el-badge :value="3" class="cart-badge" />
+          <el-badge 
+            :value="cartStore.totalItemCount" 
+            class="cart-badge" 
+            :hidden="cartStore.totalItemCount === 0" 
+          />
         </el-button>
         <el-dropdown trigger="click" class="user-dropdown">
           <el-avatar src="/images/avatar.jpg" class="user-avatar" />
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item icon="User">个人中心</el-dropdown-item>
-              <el-dropdown-item icon="Platform" @click="goToAdmin">后台管理</el-dropdown-item>
-              <el-dropdown-item divided icon="SwitchButton">退出登录</el-dropdown-item>
+              <el-dropdown-item :icon="User">个人中心</el-dropdown-item>
+              <el-dropdown-item :icon="Platform" @click="goToAdmin">后台管理</el-dropdown-item>
+              <el-dropdown-item divided :icon="SwitchButton">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -65,15 +66,16 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { Search, House, Goods, ShoppingCart, InfoFilled, Phone, Platform } from '@element-plus/icons-vue';
+import { useCartStore } from '@/stores/cart';
+import { Search, House, Goods, ShoppingCart, Star, Phone, Platform, User, SwitchButton } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const searchKeyword = ref('');
+const cartStore = useCartStore();
 
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
     router.push({ path: '/products', query: { search: searchKeyword.value } });
-    ElMessage.success(`搜索: ${searchKeyword.value}`);
   }
 };
 
@@ -83,7 +85,6 @@ const goToAdmin = () => {
 </script>
 
 <style scoped>
-/* 这里的样式与我们之前调试好的最终版导航栏样式完全一致 */
 .navbar {
   display: flex; justify-content: space-between; align-items: center;
   padding: 0 40px; height: 60px; background-color: rgba(255, 255, 255, 0.8);
@@ -105,8 +106,13 @@ const goToAdmin = () => {
 .nav-link.router-link-exact-active { color: #409eff; border-bottom-color: #409eff; }
 .nav-link .el-icon { margin-right: 5px; }
 .nav-actions { display: flex; align-items: center; gap: 20px; }
-.cart-btn { position: relative; border: none; background: none; }
+.cart-btn.el-button.is-circle {
+  position: relative; border: none; background: none; color: #606266;
+  font-size: 24px; transition: color 0.3s;
+}
+.cart-btn.el-button.is-circle:hover { color: #409eff; background-color: transparent; }
 .cart-badge { position: absolute; top: -5px; right: -5px; }
 .user-dropdown { cursor: pointer; }
 .user-avatar { background-color: #e9e9eb; color: #666; }
+.user-dropdown :deep(.el-icon) { font-size: 16px; margin-right: 8px; }
 </style>

@@ -28,26 +28,6 @@ a,
   padding: 20px 40px;
 }
 
-/* 内页通用的头部横幅样式 */
-.page-header {
-  text-align: center;
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  margin-bottom: -60px; /* 关键：让下面的内容可以向上层叠 */
-}
-.page-header h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  margin-bottom: 15px;
-}
-.page-header p {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
 /* 毛玻璃/亚克力效果 */
 .acrylic-section {
   position: relative;
