@@ -765,6 +765,21 @@ onMounted(() => {
   margin-left: auto;
 }
 
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 40px;
+}
+
+.public-home .acrylic-section {
+  margin-top: 80px;
+  margin-bottom: 30px; 
+}
+
+.carousel-section {
+  margin-top: 80px;
+}
+
 @media (max-width: 992px) {
   .featured-news {
     flex-direction: column;

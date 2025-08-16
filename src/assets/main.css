@@ -21,13 +21,6 @@ a,
   }
 }
 
-/* --- 全局布局与效果样式 --- */
-.main-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 20px 40px;
-}
-
 /* 毛玻璃/亚克力效果 */
 .acrylic-section {
   position: relative;

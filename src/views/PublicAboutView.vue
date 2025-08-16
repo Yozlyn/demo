@@ -1,14 +1,13 @@
 <template>
-  <div class="about">
-    <!-- 页面头部 -->
+  <div class="about-page">
     <div class="page-header">
       <h1>关于学子通</h1>
       <p>专业的教育装备供应商，致力于推动教育现代化发展</p>
     </div>
 
-    <!-- 公司介绍 -->
-    <section class="company-intro">
-      <el-row :gutter="40">
+    <!-- 公司简介: 应用容器布局 -->
+    <section class="company-intro reveal-section acrylic-section">
+      <el-row :gutter="40" align="middle">
         <el-col :span="12">
           <div class="intro-content">
             <h2>公司简介</h2>
@@ -44,8 +43,8 @@
       </el-row>
     </section>
 
-    <!-- 企业文化 -->
-    <section class="company-culture">
+    <!-- 企业文化: 不加容器 -->
+    <section class="company-culture reveal-section plain-section">
       <div class="section-header">
         <h2>企业文化</h2>
       </div>
@@ -80,8 +79,8 @@
       </el-row>
     </section>
 
-    <!-- 发展历程 -->
-    <section class="company-history">
+    <!-- 发展历程: 应用容器布局 -->
+    <section class="company-history reveal-section acrylic-section">
       <div class="section-header">
         <h2>发展历程</h2>
       </div>
@@ -119,8 +118,8 @@
       </el-timeline>
     </section>
 
-    <!-- 资质荣誉 -->
-    <section class="company-honors">
+    <!-- 资质荣誉: 不加容器 -->
+    <section class="company-honors reveal-section plain-section">
       <div class="section-header">
         <h2>资质荣誉</h2>
       </div>
@@ -138,8 +137,8 @@
       </el-row>
     </section>
 
-    <!-- 团队介绍 -->
-    <section class="team-intro">
+    <!-- 核心团队: 应用容器布局 -->
+    <section class="team-intro reveal-section acrylic-section">
       <div class="section-header">
         <h2>核心团队</h2>
         <p>拥有丰富经验的专业团队，为客户提供优质服务</p>
@@ -161,7 +160,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Aim, View, Star, Trophy, UserFilled } from '@element-plus/icons-vue'
 
 export default {
@@ -174,8 +173,24 @@ export default {
     UserFilled
   },
   setup() {
+    onMounted(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      setTimeout(() => {
+        document.querySelectorAll('.reveal-section').forEach(section => {
+          observer.observe(section);
+        });
+      }, 100);
+    });
+
     const honors = ref([
-      {
+        {
         id: 1,
         title: '高新技术企业',
         description: '国家高新技术企业认定',
@@ -199,7 +214,7 @@ export default {
         description: '教育装备展示会创新产品奖',
         year: '2022年'
       }
-    ])
+    ]);
 
     const teamMembers = ref([
       {
@@ -220,7 +235,7 @@ export default {
         position: '销售总监',
         description: '丰富的市场营销经验，深度了解客户需求和市场趋势'
       }
-    ])
+    ]);
 
     return {
       honors,
@@ -236,19 +251,32 @@ export default {
 </script>
 
 <style scoped>
-.about {
-  min-height: 100vh;
+.about-page {
+  background-color: #f8f9fa;
+  padding-bottom: 30px;
 }
 
-.company-intro, .company-culture, .company-history, .company-honors, .team-intro {
-  padding: 60px 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+/* 毛玻璃/亚克力效果容器 */
+.acrylic-section {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 1400px;
+  margin: 50px auto;
+  padding: 40px 40px;
 }
 
-.company-intro {
-  background: white;
+/* 普通区块，用于对齐 */
+.plain-section {
+  max-width: 1400px;
+  margin: 50px auto;
+  padding: 60px 40px;
 }
+
 
 .intro-content h2 {
   font-size: 28px;
@@ -287,13 +315,9 @@ export default {
 
 .intro-image img {
   width: 100%;
-  height: 300px;
+  height: auto;
   object-fit: cover;
   border-radius: 8px;
-}
-
-.company-culture {
-  background: #f8f9fa;
 }
 
 .section-header {
@@ -333,10 +357,6 @@ export default {
   line-height: 1.6;
 }
 
-.company-history {
-  background: white;
-}
-
 .company-history .el-timeline {
   padding-left: 20px;
 }
@@ -348,10 +368,6 @@ export default {
 .company-history h4 {
   margin-bottom: 10px;
   color: #333;
-}
-
-.company-honors {
-  background: #f8f9fa;
 }
 
 .honor-card {
@@ -386,14 +402,12 @@ export default {
   color: #999;
 }
 
-.team-intro {
-  background: white;
-}
-
 .team-card {
   text-align: center;
   padding: 30px 20px;
   height: 100%;
+  background-color: transparent;
+  box-shadow: none;
 }
 
 .member-avatar {
@@ -419,8 +433,9 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .company-intro, .company-culture, .company-history, .company-honors, .team-intro {
+  .acrylic-section, .plain-section {
     padding: 40px 15px;
+    margin: 30px auto;
   }
   
   .company-stats {
@@ -436,7 +451,7 @@ export default {
 /* --- 页面头部样式 --- */
 .page-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 0; /* 调整与第一个容器的间距 */
   padding: 60px 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -455,7 +470,6 @@ export default {
 @media (max-width: 768px) {
   .page-header {
     padding: 40px 20px;
-    margin-bottom: 40px;
   }
   
   .page-header h1 {
@@ -463,4 +477,3 @@ export default {
   }
 }
 </style>
-

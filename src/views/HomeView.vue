@@ -10,14 +10,15 @@
       <!-- 侧边栏内容 -->
       <div class="sidebar-header">
         <div class="logo" :class="{ 'logo-collapsed': isCollapse }">
-          <el-icon class="logo-icon"><Monitor /></el-icon>
+          <!-- 将 el-icon 替换为 img 标签 -->
+          <img src="@/assets/logo.png" alt="Logo" class="logo-img" />
           <span v-if="!isCollapse" class="logo-text">学子通教育装备商城</span>
         </div>
       </div>
       
       <!-- 菜单部分 -->
       <el-menu 
-        :default-openeds="['1', '2']"
+        :default-openeds="['1', '2','3']"
         router 
         :collapse="isCollapse"
         collapse-transition
@@ -217,7 +218,7 @@
 
 <script lang="ts" setup>
 import { 
-  Monitor, Goods, List, Folder, Box, Star, 
+  Goods, List, Folder, Box, Star, 
   ShoppingCart, Setting, Clock, RefreshLeft, Histogram, User, 
   Rank, MapLocation, Ticket, Discount, Present, Picture, 
   UserFilled, Money, Van, Document, Search, Refresh,
@@ -366,6 +367,7 @@ const sidebarBgColor = '#ffffff';
 .sidebar-header {
   display: flex;
   align-items: center;
+  justify-content: center; /* 折叠时居中 */
   padding: 0 16px;
   height: 64px;
   background-color: #ffffff;
@@ -378,9 +380,12 @@ const sidebarBgColor = '#ffffff';
   white-space: nowrap;
 }
 
-.logo-icon {
-  font-size: 24px;
-  color: #666666;
+/* 新增 logo 图片样式 */
+.logo-img {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+  transition: margin 0.3s;
 }
 
 .logo-text {

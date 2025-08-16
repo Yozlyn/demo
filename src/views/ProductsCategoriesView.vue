@@ -47,7 +47,7 @@
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="50" />
-            <el-table-column type="index" label="编号" width="60" />
+            <el-table-column prop="categoryId" label="分类ID" width="120" />
             <el-table-column prop="categoryName" label="分类名称" min-width="180" />
             <el-table-column prop="description" label="描述" min-width="200" />
             <el-table-column prop="parentCategoryId" label="父分类ID" width="120" />
@@ -97,9 +97,8 @@
           label="分类ID" 
           :label-width="state.formLabelWidth" 
           prop="categoryId"
-          v-if="state.isEdit"
         >
-          <el-input v-model="state.form.categoryId" autocomplete="off" readonly />
+          <el-input v-model="state.form.categoryId" autocomplete="off" :disabled="state.isEdit" />
         </el-form-item>
         <el-form-item label="分类名称" :label-width="state.formLabelWidth" prop="categoryName">
           <el-input v-model="state.form.categoryName" autocomplete="off" />
@@ -130,7 +129,7 @@ import axios from "axios";
 import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
 import type { FormInstance } from "element-plus";
 
-// 定义商品分类数据类型接口
+// --- 类型定义 ---
 interface ProductCategory {
   categoryId: string;
   categoryName: string;
@@ -138,10 +137,6 @@ interface ProductCategory {
   parentCategoryId: string;
 }
 
-// 定义表单数据类型
-interface ProductCategoryForm extends ProductCategory {}
-
-// 定义分页响应数据类型
 interface PageResponse {
   code: number;
   msg?: string;
@@ -149,19 +144,17 @@ interface PageResponse {
   count: number;
 }
 
-// 定义通用API响应类型
 interface ApiResponse {
   code: number;
   msg?: string;
-  data?: any;
 }
 
+// --- 响应式状态 ---
 const ruleFormRef = ref<FormInstance>();
 const tableLoading = ref(false);
 const searchQuery = ref("");
 const selectedRows = ref<ProductCategory[]>([]);
 
-// 页面状态管理
 const state = reactive({
   dialogFormVisible: false,
   dialogTitle: "修改商品分类信息",
@@ -171,43 +164,29 @@ const state = reactive({
   pageNum: 1,
   pageSize: 10,
   total: 0,
-  form: {
-    categoryId: "",
-    categoryName: "",
-    description: "",
-    parentCategoryId: "",
-  } as ProductCategoryForm,
+  form: {} as ProductCategory,
 });
 
-// 表单校验规则
+// --- 表单校验规则 ---
 const rules = reactive({
-  categoryName: [
-    { required: true, message: "分类名称不能为空", trigger: "blur" },
-  ],
-  description: [
-    { required: true, message: "描述不能为空", trigger: "blur" },
-  ],
+  categoryId: [{ required: true, message: "分类ID不能为空", trigger: "blur" }],
+  categoryName: [{ required: true, message: "分类名称不能为空", trigger: "blur" }],
 });
 
-// 过滤数据
+// --- 计算属性 ---
 const filteredTableData = computed(() => {
   return state.tableData.filter(item => {
-    const searchMatch = item.categoryName.includes(searchQuery.value) || 
-                       item.categoryId.includes(searchQuery.value);
-    return searchMatch;
+    return item.categoryName.includes(searchQuery.value) || 
+           item.categoryId.includes(searchQuery.value);
   });
 });
 
-// 获取商品分类数据
+// --- API 调用 ---
 const getData = () => {
   tableLoading.value = true;
   axios.get<PageResponse>("http://localhost:8080/productCategories/page", {
-    params: {
-      pageNum: state.pageNum,
-      pageSize: state.pageSize,
-    },
+    params: { pageNum: state.pageNum, pageSize: state.pageSize },
   }).then(res => {
-    console.log("Response:", res.data); // 调试：查看响应数据
     state.tableData = res.data.data;
     state.total = res.data.count;
   }).catch(err => {
@@ -217,70 +196,54 @@ const getData = () => {
   });
 };
 
-// 分页相关函数
-const refreshData = (page: number) => { state.pageNum = page; getData(); };
-const handleSizeChange = (size: number) => { state.pageSize = size; getData(); };
-
-// 新增商品分类
-const handleAdd = () => {
-  state.isEdit = false;
-  state.dialogTitle = "新增商品分类";
-  state.dialogFormVisible = true;
-  state.form = {
-    categoryId: "",
-    categoryName: "",
-    description: "",
-    parentCategoryId: "",
-  };
-  ruleFormRef.value?.resetFields();
-};
-
-// 编辑商品分类
-const handleEdit = (row: ProductCategory) => {
-  state.isEdit = true;
-  state.dialogTitle = "修改商品分类信息";
-  state.dialogFormVisible = true;
-  state.form = { ...row };
-};
-
-// 提交表单
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   await formEl.validate();
-  const url = state.isEdit 
-    ? "http://localhost:8080/productCategories/update" 
-    : "http://localhost:8080/productCategories/add";
-  
+  const url = state.isEdit ? "/productCategories/update" : "/productCategories/add";
   try {
-    const res = await axios.post<ApiResponse>(url, state.form);
+    const res = await axios.post<ApiResponse>(`http://localhost:8080${url}`, state.form);
     if (res.data.code === 0) {
       ElMessage.success(state.isEdit ? "修改成功" : "新增成功");
       state.dialogFormVisible = false;
       getData();
     } else {
-      ElMessage.error(res.data.msg || (state.isEdit ? "修改失败" : "新增失败"));
+      ElMessage.error(res.data.msg || "操作失败");
     }
   } catch (error) {
     ElMessage.error("提交失败，请稍后重试");
   }
 };
 
-// 删除商品分类
+// --- 事件处理 ---
+const refreshData = (page: number) => { state.pageNum = page; getData(); };
+const handleSizeChange = (size: number) => { state.pageSize = size; getData(); };
+
+const handleAdd = () => {
+  state.isEdit = false;
+  state.dialogTitle = "新增商品分类";
+  state.form = {
+    categoryId: "",
+    categoryName: "",
+    description: "",
+    parentCategoryId: "",
+  };
+  state.dialogFormVisible = true;
+  ruleFormRef.value?.resetFields();
+};
+
+const handleEdit = (row: ProductCategory) => {
+  state.isEdit = true;
+  state.dialogTitle = "修改商品分类信息";
+  state.form = { ...row };
+  state.dialogFormVisible = true;
+};
+
 const handleDelete = (row: ProductCategory) => {
-  ElMessageBox.confirm(
-    `确定要删除分类ID为${row.categoryId}的商品分类吗?`,
-    "警告",
-    {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    }
-  ).then(async () => {
+  ElMessageBox.confirm(`确定要删除分类 ${row.categoryName} 吗?`, "警告", {
+    type: "warning",
+  }).then(async () => {
     try {
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/delete", { 
-        categoryId: row.categoryId 
-      });
-      
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/delete", { categoryId: row.categoryId });
       if (res.data.code === 0) {
         ElMessage.success("删除成功");
         getData();
@@ -288,42 +251,35 @@ const handleDelete = (row: ProductCategory) => {
         ElMessage.error(res.data.msg || "删除失败");
       }
     } catch (error) {
-      ElMessage.error("删除失败，请稍后重试");
+      ElMessage.error("删除请求失败");
     }
-  }).catch(() => {
-    ElMessage.info("操作已取消");
-  });
+  }).catch(() => ElMessage.info("操作已取消"));
 };
 
-// 表格选择和批量删除
 const handleSelectionChange = (val: ProductCategory[]) => { selectedRows.value = val; };
 
 const handleBatchDelete = async () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning("请先选择要删除的商品分类");
-    return;
-  }
-  
-  ElMessageBox.confirm(`确定要删除${selectedRows.value.length}个选中的商品分类吗？`, "警告", {
-    confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
+  if (selectedRows.value.length === 0) return;
+  ElMessageBox.confirm(`确定要删除${selectedRows.value.length}个选中的分类吗？`, "警告", {
+    type: "warning",
   }).then(async () => {
     try {
       const categoryIds = selectedRows.value.map(row => row.categoryId);
-      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/batchDelete", { categoryIds });
+      // 后端通常期望接收一个纯粹的ID数组
+      const res = await axios.post<ApiResponse>("http://localhost:8080/productCategories/batchDelete", categoryIds);
       if (res.data.code === 0) {
-        ElMessage.success(`成功删除${selectedRows.value.length}个商品分类`);
-        selectedRows.value = [];
+        ElMessage.success("批量删除成功");
         getData();
       } else {
         ElMessage.error(res.data.msg || "批量删除失败");
       }
     } catch (error) {
-      ElMessage.error("批量删除失败，请稍后重试");
+      ElMessage.error("批量删除请求失败");
     }
   }).catch(() => ElMessage.info("操作已取消"));
 };
 
-// 页面初始化
+// --- 生命周期钩子 ---
 onMounted(getData);
 </script>
 
@@ -350,42 +306,10 @@ onMounted(getData);
   flex-grow: 1;
 }
 
-.table-card:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
 .el-table th {
   background-color: #f5f7fa;
   font-weight: 500;
   color: #606266;
-}
-
-.el-table td {
-  padding: 6px;
-}
-
-.el-table .cell {
-  line-height: 1.5;
-}
-
-/* 表格样式 */
-.el-table {
-  background-color: #fff;
-  border-radius: 8px;
-}
-
-/* 禁用表格内部滚动，让滚动事件传递到页面 */
-.el-table .el-table__body-wrapper {
-  overflow: hidden !important;
-}
-
-.el-table__body-wrapper::-webkit-scrollbar {
-  display: none !important;
-}
-
-.table-card .el-card__body {
-  padding: 0;
-  overflow: visible;
 }
 
 .pagination-container {
@@ -398,7 +322,6 @@ onMounted(getData);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* 统一按钮样式 */
 .custom-primary-button,
 .custom-batch-delete-button,
 .custom-edit-button {
@@ -414,21 +337,6 @@ onMounted(getData);
   border-color: #b3d8ff;
 }
 
-.custom-batch-delete-button {
-  border-color: #79bbff;
-}
-
-.custom-batch-delete-button:hover {
-  background-color: #b3d8ff;
-  border-color: #66b1ff;
-}
-
-.custom-batch-delete-button:disabled {
-  background-color: #f5f7fa;
-  border-color: #dfe4ed;
-  color: #c0c4cc;
-}
-
 .custom-delete-button {
   background-color: #fde2e2;
   border-color: #fab6b6;
@@ -439,15 +347,4 @@ onMounted(getData);
   background-color: #f8c7c7;
   border-color: #f89898;
 }
-
-@media (max-width: 768px) {
-  .users-container {
-    padding: 16px;
-  }
-  .header-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
 </style>
-

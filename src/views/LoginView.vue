@@ -75,16 +75,23 @@
           </el-link>
         </el-form-item>
         
-        <!-- 登录按钮 -->
-        <el-form-item class="login-btn-group">
-          <el-button 
-            type="primary" 
-            class="login-btn" 
-            native-type="submit"
-            :loading="loginLoading"
-          >
-            登录
-          </el-button>
+        <!-- 注册和登录按钮 -->
+        <el-form-item class="login-btn-group" label-width="0">
+            <el-button 
+              type="success" 
+              class="action-btn" 
+              @click="openRegisterDialog"
+            >
+              立即注册
+            </el-button>
+            <el-button 
+              type="primary" 
+              class="action-btn" 
+              native-type="submit"
+              :loading="loginLoading"
+            >
+              登录
+            </el-button>
         </el-form-item>
         
         <!-- 其他登录方式 -->
@@ -113,32 +120,59 @@
     <div class="login-footer">
       <p>© 2025 Y2024web Company. All Rights Reserved.</p>
     </div>
+
+    <!-- 注册弹窗 -->
+    <el-dialog v-model="registerDialogVisible" title="创建新账户" width="400px" :before-close="handleCloseRegister">
+      <el-form 
+        ref="registerFormRef" 
+        :model="registerForm" 
+        :rules="registerRules"
+        label-width="80px"
+        class="register-form"
+      >
+        <el-form-item label="用户名" prop="suName">
+          <el-input v-model="registerForm.suName" placeholder="3-20位字符" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="registerForm.email" placeholder="请输入您的邮箱" />
+        </el-form-item>
+        <el-form-item label="密码" prop="suPwd">
+          <el-input v-model="registerForm.suPwd" type="password" show-password placeholder="4-20位字符" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPwd">
+          <el-input v-model="registerForm.confirmPwd" type="password" show-password placeholder="请再次输入密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="registerDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleRegister" :loading="registerLoading">
+            立即注册
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, watch } from 'vue';
-import { ElForm, ElFormItem, ElInput, ElButton, ElCheckbox, ElLink, ElMessage } from 'element-plus';
+import { ElForm, ElInput, ElButton, ElCheckbox, ElLink, ElMessage, ElDialog } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from "axios";
 import CryptoJS from 'crypto-js';
 
-// 导入所有壁纸图片
+// --- 壁纸和视差效果 ---
 const wallpapers = import.meta.glob('@/assets/wallpapers/*.{jpg,png,jpeg}', { eager: true });
-
-// 提取图片路径数组
 const wallpaperPaths = Object.values(wallpapers).map((module: any) => module.default);
-
-// 随机选择一张图片
 const randomWallpaper = wallpaperPaths.length 
   ? wallpaperPaths[Math.floor(Math.random() * wallpaperPaths.length)]
   : '';
 
-// 视差效果相关
 const bgX = ref(0);
 const bgY = ref(0);
 const parallaxFactor = 20;
-
 const handleMouseMove = (e: MouseEvent) => {
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
@@ -148,68 +182,29 @@ const handleMouseMove = (e: MouseEvent) => {
   bgY.value = mouseY * parallaxFactor;
 };
 
-// 登录表单类型定义
-interface LoginForm {
-  suName: string;
-  suPwd: string;
-  captcha: string;
-}
-
-// 表单引用
-const loginFormRef = ref<InstanceType<typeof ElForm> | null>(null);
-
-// 登录表单数据
-const loginForm = reactive<LoginForm>({
-  suName: '',
-  suPwd: '',
-  captcha: ''
-});
-
-// 验证码相关
-const captchaText = ref<string>('1234');
-
-// 状态变量
-const showPassword = ref<boolean>(false);
-const rememberMe = ref<boolean>(false);
-const loginLoading = ref<boolean>(false);
-const hasSavedPassword = ref<boolean>(false);
-
-// 路由实例
+// --- 登录逻辑 ---
+const loginFormRef = ref<FormInstance>();
+const loginForm = reactive({ suName: '', suPwd: '', captcha: '' });
+const captchaText = ref('1234');
+const showPassword = ref(false);
+const rememberMe = ref(false);
+const loginLoading = ref(false);
+const hasSavedPassword = ref(false);
 const router = useRouter();
 
-// 表单验证规则
-const loginRules = {
-  suName: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
-  ],
-  suPwd: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 4, max: 20, message: '密码长度在 4 到 20 个字符', trigger: 'blur' }
-  ],
-  captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 4, message: '验证码长度为4个字符', trigger: 'blur' }
-  ]
-};
+const loginRules = reactive<FormRules>({
+  suName: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  suPwd: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+});
 
-// 加密密码
-const encryptPassword = (password: string, key: string) => {
-  return CryptoJS.AES.encrypt(password, key).toString();
-};
-
-// 解密密码
-const decryptPassword = (encryptedPassword: string, key: string) => {
+const encryptPassword = (password: string, key: string) => CryptoJS.AES.encrypt(password, key).toString();
+const decryptPassword = (encrypted: string, key: string) => {
   try {
-    const bytes = CryptoJS.AES.decrypt(encryptedPassword, key);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (error) {
-    console.error('解密失败:', error);
-    return '';
-  }
+    return CryptoJS.AES.decrypt(encrypted, key).toString(CryptoJS.enc.Utf8);
+  } catch { return ''; }
 };
 
-// 刷新验证码
 const refreshCaptcha = () => {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   let result = '';
@@ -219,111 +214,146 @@ const refreshCaptcha = () => {
   captchaText.value = result;
 };
 
-// 处理登录
-const handleLogin = async (event?: Event) => {
-  if (loginLoading.value) return;
+const handleLogin = async () => {
   if (!loginFormRef.value) return;
-  
-  try {
-    let validateFields = ['suName', 'suPwd'];
-    if (!rememberMe.value || !hasSavedPassword.value) {
-      validateFields.push('captcha');
-    }
-    
-    await loginFormRef.value.validateField(validateFields);
-    
-    loginLoading.value = true;
-    
-    const loginParams: Partial<LoginForm> = {
-      suName: loginForm.suName,
-      suPwd: loginForm.suPwd
-    };
-    
-    if (!rememberMe.value || !hasSavedPassword.value) {
-      loginParams.captcha = loginForm.captcha;
-      if (loginParams.captcha.toUpperCase() !== captchaText.value) {
+  await loginFormRef.value.validate((valid) => {
+    if (valid) {
+      if ((!rememberMe.value || !hasSavedPassword.value) && loginForm.captcha.toUpperCase() !== captchaText.value) {
         ElMessage.error('验证码不正确');
-        loginLoading.value = false;
         refreshCaptcha();
         return;
       }
-    }
-    
-    axios({
-      method: "get",
-      url: "http://localhost:8080/sysUser/login",
-      params: loginParams
-    }).then((res) => {
-      if (res.data.code == 0) {
-        ElMessage.success('登录成功');
-        localStorage.setItem('suName', res.data.data[0].suName);
-        localStorage.setItem('suId', res.data.data[0].suId);
-        localStorage.setItem('suRole', res.data.data[0].suRole);
-        
-        if (rememberMe.value) {
-          localStorage.setItem('username', loginForm.suName);
-          // 加密密码，使用用户名作为密钥（可加盐）
-          const encryptedPwd = encryptPassword(loginForm.suPwd, loginForm.suName + '_salt');
-          localStorage.setItem('encryptedPassword', encryptedPwd);
-          hasSavedPassword.value = true;
+      loginLoading.value = true;
+      axios.post("http://localhost:8080/sysUser/login", {
+        suName: loginForm.suName,
+        suPwd: loginForm.suPwd
+      }).then(res => {
+        if (res.data.code === 0) {
+          ElMessage.success('登录成功，即将跳转...');
+          
+          // 存储用户信息
+          localStorage.setItem('suName', res.data.data[0].suName);
+          localStorage.setItem('suId', res.data.data[0].suId);
+          localStorage.setItem('suRole', res.data.data[0].suRole);
+          
+          if (rememberMe.value) {
+            localStorage.setItem('username', loginForm.suName);
+            const encryptedPwd = encryptPassword(loginForm.suPwd, loginForm.suName + '_salt');
+            localStorage.setItem('encryptedPassword', encryptedPwd);
+            hasSavedPassword.value = true;
+          } else {
+            localStorage.removeItem('username');
+            localStorage.removeItem('encryptedPassword');
+            hasSavedPassword.value = false;
+          }
+
+          // 延迟 1.5 秒后跳转
+          setTimeout(() => {
+            router.push('/admin');
+          }, 1500);
+
         } else {
-          localStorage.removeItem('username');
-          localStorage.removeItem('encryptedPassword');
-          hasSavedPassword.value = false;
+          ElMessage.error(res.data.msg || '用户名或密码错误');
+          loginLoading.value = false; // 登录失败时，结束加载状态
         }
-        
-        router.push('/admin');
-      } else {
-        ElMessage.error('登录失败: ' + (res.data.msg || '用户名或密码错误'));
-        if (!rememberMe.value || !hasSavedPassword.value) {
-          refreshCaptcha();
-        }
-      }
-    }).catch(error => {
-      console.error('登录请求失败:', error);
-      ElMessage.error('登录请求失败，请稍后重试');
-      if (!rememberMe.value || !hasSavedPassword.value) {
-        refreshCaptcha();
-      }
-    }).finally(() => {
-      loginLoading.value = false;
-    });
-  } catch (error) {
-    console.error('表单验证失败:', error);
-    loginLoading.value = false;
-    return;
+      }).catch(err => {
+        ElMessage.error('登录请求失败');
+        loginLoading.value = false; // 请求异常时，结束加载状态
+      });
+    }
+  });
+};
+
+const handleForgotPassword = () => ElMessage.info('请联系管理员重置密码');
+const handleSocialLogin = (type: string) => ElMessage.info(`正在跳转到 ${type} 登录...`);
+
+// --- 注册弹窗逻辑 ---
+const registerDialogVisible = ref(false);
+const registerLoading = ref(false);
+const registerFormRef = ref<FormInstance>();
+const registerForm = reactive({
+  suName: '',
+  email: '',
+  suPwd: '',
+  confirmPwd: '',
+});
+
+const validatePass = (rule: any, value: any, callback: any) => {
+  if (value === '') {
+    callback(new Error('请再次输入密码'));
+  } else if (value !== registerForm.suPwd) {
+    callback(new Error("两次输入的密码不一致"));
+  } else {
+    callback();
   }
 };
 
-// 处理忘记密码
-const handleForgotPassword = () => {
-  ElMessage.info('即将跳转到密码重置页面');
+const registerRules = reactive<FormRules>({
+  suName: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change'] }
+  ],
+  suPwd: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 4, max: 20, message: '长度在 4 到 20 个字符', trigger: 'blur' }
+  ],
+  confirmPwd: [
+    { required: true, validator: validatePass, trigger: 'blur' }
+  ],
+});
+
+const openRegisterDialog = () => {
+  registerDialogVisible.value = true;
 };
 
-// 社交登录
-const handleSocialLogin = (type: string) => {
-  if (type === 'wechat') {
-    window.location.href = 'https://wx.qq.com/';
-  } else if (type === 'QQ') {
-    window.location.href = 'https://ti.qq.com/qqlevel/index';
-  }
+const handleCloseRegister = (done: () => void) => {
+  registerFormRef.value?.resetFields();
+  done();
 };
 
-// 花瓣飘落效果
+const handleRegister = async () => {
+  if (!registerFormRef.value) return;
+  await registerFormRef.value.validate((valid) => {
+    if (valid) {
+      registerLoading.value = true;
+      axios.post("http://localhost:8080/sysUser/register", {
+        suName: registerForm.suName,
+        email: registerForm.email,
+        suPwd: registerForm.suPwd,
+      }).then(res => {
+        if (res.data.code === 0) {
+          ElMessage.success('注册成功！现在您可以使用新账户登录了。');
+          registerDialogVisible.value = false;
+        } else {
+          ElMessage.error(res.data.msg || '注册失败');
+        }
+      }).catch(error => {
+        ElMessage.error('注册请求失败，请检查网络或联系管理员');
+      }).finally(() => {
+        registerLoading.value = false;
+      });
+    }
+  });
+};
+
+// --- 花瓣飘落效果 ---
 const petalsContainer = ref<HTMLDivElement | null>(null);
-let animationFrameId: number;
-let petals: HTMLDivElement[] = [];
+let petals: { element: HTMLDivElement, animation: Animation }[] = [];
 const totalPetals = 30;
 
 const createPetal = () => {
-  const petal = document.createElement('div');
-  petal.className = 'petal';
+  const petalEl = document.createElement('div');
+  petalEl.className = 'petal';
   const petalSvg = `
     <svg t="1753879677902" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5228" width="${Math.random() * 40 + 30}" height="${Math.random() * 40 + 30}">
       <path d="M501.7 643.8c-7.5 1.4-52.9 45-67.8 38.6-13.1-5 7.5-50.4-3.7-65.4-11.2-15-97.2 0.5-129.5 15.5-31.8 15-83.7 55.9-101.9 110.4-17.7 53.6-15.9 111.8 15.9 137.7 31.8 26.4 78.5 2.7 78.5 2.7s0.4 65 43.5 74.1c42.1 9.1 125.7-13.2 167.3-77.3 41.6-63.6 30.9-165 23.4-198.1-7.9-33.7-18.2-39.6-25.7-38.2z m371.2-19.1c-53.8-44.6-222.5-79.5-247.8-62.7-25.7 17.2 15.4 58.6 2.3 65.4-12.2 7.3-44.9-27.7-57.5-23.2-12.1 5-29.9 103.2-6.1 163.6 23.9 60.9 113.6 153.2 174.4 126.4 60.8-26.8 52.8-74.5 52.8-74.5s82.7 18.2 113.1-31.8c31.5-49.6 10.9-128.2-31.2-163.2zM585.4 443.4c10.8 8.1 51.4-9.6 61.7 0.4 9.8 10.4-53.3 41.4-34.1 65 19.2 22.7 175.3 38.1 241.2 13.2 59.4-22.3 112.7-78.6 101.9-146.8-9.3-56.8-93-71.8-93-71.8s21-62.3-28.1-85.9c-86.5-42.3-150 27.3-190.2 90.5-36 55.9-70.2 127.7-59.4 135.4zM521.8 66.2c-59.8-14.1-105.2 63.2-105.2 63.2s-59.8-10.4-99.1 25.5c-48.2 43.2-37.9 106.3 8.9 165.9 41.6 52.3 108.5 95.5 120.2 90 11.7-5.9 10.8-48.1 23.8-52.2 14-4.6 21 61.4 51 54.1 29.9-7.3 105.2-135.4 106.2-202.2 1.8-59.8-33.3-127.5-105.8-144.3zM250.7 623.4c66.9-18.7 150-42.7 150.5-65.5 0.5-21.8-70.1-34.1-64.1-60.4 3.7-13.2 72-2.8 76.7-31.4 4.2-21.8-48.6-81.8-116.4-114.5-56.6-27.3-149.1-42.7-189.8 15-34.1 48.2 0.4 101.3 0.4 101.3s-59.3 45-42.5 94.1c19.6 59.1 109.4 82.7 185.2 61.4z m0 0" fill="#d4237a" p-id="5229"></path>
     </svg>
   `;
-  petal.innerHTML = petalSvg;
+  petalEl.innerHTML = petalSvg;
   const size = Math.random() * 120 + 80;
   const startPosX = Math.random() * window.innerWidth;
   const startPosY = -size;
@@ -332,7 +362,7 @@ const createPetal = () => {
   const rotation = Math.random() * 360;
   const rotationSpeed = Math.random() * 120 - 60;
   const sway = Math.random() * 50 + 20;
-  petal.style.cssText = `
+  petalEl.style.cssText = `
     position: absolute;
     top: ${startPosY}px;
     left: ${startPosX}px;
@@ -340,16 +370,10 @@ const createPetal = () => {
     z-index: 0;
     pointer-events: none;
   `;
-  const animation = petal.animate(
+  const animation = petalEl.animate(
     [
-      { 
-        transform: `translate(0, 0) rotate(${rotation}deg)`,
-        opacity: Math.random() * 0.7 + 0.3
-      },
-      { 
-        transform: `translate(${sway}px, ${window.innerHeight + size}px) rotate(${rotation + rotationSpeed * duration}deg)`,
-        opacity: Math.random() * 0.5
-      }
+      { transform: `translate(0, 0) rotate(${rotation}deg)`, opacity: Math.random() * 0.7 + 0.3 },
+      { transform: `translate(${sway}px, ${window.innerHeight + size}px) rotate(${rotation + rotationSpeed * duration}deg)`, opacity: Math.random() * 0.5 }
     ],
     {
       duration: duration * 1000,
@@ -358,52 +382,51 @@ const createPetal = () => {
       easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
     }
   );
-  (petal as any).animation = animation;
-  return petal;
+  return { element: petalEl, animation };
 };
 
 const initPetals = () => {
   if (!petalsContainer.value) return;
-  petals.forEach(petal => {
-    (petal as any).animation.cancel();
-    petal.remove();
+  petals.forEach(p => {
+    p.animation.cancel();
+    p.element.remove();
   });
   petals = [];
   for (let i = 0; i < totalPetals; i++) {
     const petal = createPetal();
-    petalsContainer.value.appendChild(petal);
     petals.push(petal);
+    petalsContainer.value.appendChild(petal.element);
   }
 };
 
+// --- 生命周期钩子 ---
 onMounted(() => {
   const savedUsername = localStorage.getItem('username');
   const encryptedPassword = localStorage.getItem('encryptedPassword');
   if (savedUsername && encryptedPassword) {
     loginForm.suName = savedUsername;
-    // 解密密码
     loginForm.suPwd = decryptPassword(encryptedPassword, savedUsername + '_salt');
     rememberMe.value = true;
     hasSavedPassword.value = true;
   }
   refreshCaptcha();
-  initPetals();
+  initPetals(); // 初始化花瓣效果
   window.addEventListener('resize', initPetals);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', initPetals);
+  petals.forEach(p => {
+    p.animation.cancel();
+    p.element.remove();
+  });
+  petals = [];
 });
 
 watch(rememberMe, (newVal) => {
   if (!newVal) {
     hasSavedPassword.value = false;
   }
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', initPetals);
-  petals.forEach(petal => {
-    (petal as any).animation.cancel();
-    petal.remove();
-  });
-  petals = [];
 });
 </script>
 
@@ -479,24 +502,33 @@ onUnmounted(() => {
 }
 
 .form-actions {
+  margin-bottom: 10px;
+}
+
+/* 深度选择器，用于修改 el-form-item 的内部样式 */
+.form-actions :deep(.el-form-item__content) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  gap: 20px;
 }
 
 .forgot-password {
   font-size: 12px;
-  margin-left: auto;
 }
 
 .login-btn-group {
   margin-top: 20px;
 }
 
-.login-btn {
-  width: 100%;
+/* 深度选择器，用于居中按钮组 */
+.login-btn-group :deep(.el-form-item__content) {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.action-btn {
+  flex: 1;
   height: 44px;
   font-size: 16px;
 }
@@ -564,5 +596,9 @@ onUnmounted(() => {
   font-size: 20px;
   user-select: none;
   cursor: pointer;
+}
+
+.register-form {
+  padding: 0 20px;
 }
 </style>

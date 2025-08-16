@@ -30,13 +30,13 @@
           <el-icon><Goods /></el-icon>
           <span>商品</span>
         </router-link>
-        <router-link to="/about" class="nav-link">
-          <el-icon><Star /></el-icon>
-          <span>关于我们</span>
-        </router-link>
         <router-link to="/contact" class="nav-link">
           <el-icon><Phone /></el-icon>
           <span>联系我们</span>
+        </router-link>
+                <router-link to="/about" class="nav-link">
+          <el-icon><Star /></el-icon>
+          <span>关于我们</span>
         </router-link>
       </div>
       <div class="nav-actions">
@@ -47,31 +47,109 @@
             :hidden="cartStore.totalItemCount === 0" 
           />
         </el-button>
-        <el-dropdown trigger="click" class="user-dropdown">
+        
+        <!-- 根据登录状态显示不同内容 -->
+        <el-dropdown v-if="isLoggedIn" trigger="click" class="user-dropdown">
           <el-avatar src="/images/avatar.jpg" class="user-avatar" />
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item :icon="User">个人中心</el-dropdown-item>
+              <el-dropdown-item :icon="User" @click="goToUserProfile">个人中心</el-dropdown-item>
               <el-dropdown-item :icon="Platform" @click="goToAdmin">后台管理</el-dropdown-item>
-              <el-dropdown-item divided :icon="SwitchButton">退出登录</el-dropdown-item>
+              <el-dropdown-item divided :icon="SwitchButton" @click="handleLogout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <div v-else class="login-actions">
+            <el-button type="primary" link @click="loginDialogVisible = true">登录</el-button>
+            <el-button type="primary" @click="$router.push('/register')">注册</el-button>
+        </div>
+
       </div>
     </div>
+
+    <!-- 登录弹窗 -->
+    <el-dialog v-model="loginDialogVisible" title="用户登录" width="400px">
+      <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-position="top">
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="loginForm.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="loginForm.password" type="password" show-password placeholder="请输入密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="loginDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleLogin" :loading="loginLoading">
+            登录
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
 import { useCartStore } from '@/stores/cart';
+import { ElMessage } from 'element-plus';
+import axios from 'axios';
 import { Search, House, Goods, ShoppingCart, Star, Phone, Platform, User, SwitchButton } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const searchKeyword = ref('');
 const cartStore = useCartStore();
+const isLoggedIn = ref(false);
+const loginDialogVisible = ref(false);
+const loginLoading = ref(false);
+const loginFormRef = ref();
+
+const loginForm = reactive({
+  phone: '',
+  password: ''
+});
+
+const loginRules = reactive({
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+});
+
+const checkLoginStatus = () => {
+  if (localStorage.getItem('customerId')) {
+    isLoggedIn.value = true;
+  } else {
+    isLoggedIn.value = false;
+  }
+};
+
+const handleLogin = async () => {
+  if (!loginFormRef.value) return;
+  await loginFormRef.value.validate((valid) => {
+    if (valid) {
+      loginLoading.value = true;
+      axios.post('http://localhost:8080/customer/login', {
+        phone: loginForm.phone,
+        password: loginForm.password
+      }).then(res => {
+        if (res.data.code === 0 && res.data.data.length > 0) {
+          const customer = res.data.data[0];
+          localStorage.setItem('customerId', customer.customerId);
+          localStorage.setItem('customerName', customer.customerName);
+          ElMessage.success('登录成功！');
+          loginDialogVisible.value = false;
+          checkLoginStatus();
+        } else {
+          ElMessage.error(res.data.msg || '登录失败');
+        }
+      }).catch(() => {
+        ElMessage.error('登录请求失败');
+      }).finally(() => {
+        loginLoading.value = false;
+      });
+    }
+  });
+};
 
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
@@ -82,6 +160,22 @@ const handleSearch = () => {
 const goToAdmin = () => {
   router.push('/admin');
 };
+
+const goToUserProfile = () => {
+  router.push('/user/profile');
+};
+
+const handleLogout = () => {
+  localStorage.removeItem('customerId');
+  localStorage.removeItem('customerName');
+  isLoggedIn.value = false;
+  ElMessage.success('您已成功退出');
+  router.push('/');
+};
+
+onMounted(() => {
+  checkLoginStatus();
+});
 </script>
 
 <style scoped>
@@ -115,4 +209,5 @@ const goToAdmin = () => {
 .user-dropdown { cursor: pointer; }
 .user-avatar { background-color: #e9e9eb; color: #666; }
 .user-dropdown :deep(.el-icon) { font-size: 16px; margin-right: 8px; }
+.login-actions { display: flex; align-items: center; gap: 10px; }
 </style>

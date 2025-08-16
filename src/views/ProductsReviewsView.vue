@@ -60,7 +60,7 @@
             <el-table-column prop="customerId" label="客户ID" width="120" />
             <el-table-column prop="rating" label="评分" width="100">
               <template #default="scope">
-                <el-rate v-model="scope.row.rating" disabled show-score text-color="#ff9900" score-template="{value} 星" />
+                <span>{{ formatRating(scope.row.rating) }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="comment" label="评论内容" min-width="200" />
@@ -240,6 +240,12 @@ const filteredTableData = computed(() => {
     return searchMatch && ratingMatch;
   });
 });
+
+// 新增：格式化评分显示
+const formatRating = (rating: number) => {
+  const ratings = ['一星', '二星', '三星', '四星', '五星'];
+  return ratings[rating - 1] || '未知';
+};
 
 // 获取商品评价数据
 const getData = () => {
@@ -505,4 +511,3 @@ onMounted(getData);
   }
 }
 </style>
-

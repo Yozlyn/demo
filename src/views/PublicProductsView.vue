@@ -5,85 +5,86 @@
       <p>为教育机构提供全方位的教学设备解决方案</p>
     </div>
 
-    <div class="main-container">
-      <section class="content-wrapper acrylic-section reveal-section">
-        
-        <div class="filter-area">
-          <el-row :gutter="20" align="middle">
-            <el-col :span="6">
-              <el-select v-model="selectedCategory" placeholder="选择分类" style="width: 100%;">
-                <el-option label="全部分类" value=""></el-option>
-                <el-option label="多媒体设备" value="多媒体设备"></el-option>
-                <el-option label="教学设备" value="教学设备"></el-option>
-                <el-option label="实验设备" value="实验设备"></el-option>
-                <el-option label="家具设备" value="家具设备"></el-option>
-              </el-select>
-            </el-col>
-            <el-col :span="6">
-              <el-select v-model="priceRange" placeholder="价格范围" style="width: 100%;">
-                <el-option label="全部价格" value=""></el-option>
-                <el-option label="1000元以下" value="0-1000"></el-option>
-                <el-option label="1000-5000元" value="1000-5000"></el-option>
-                <el-option label="5000-10000元" value="5000-10000"></el-option>
-                <el-option label="10000元以上" value="10000-999999"></el-option>
-              </el-select>
-            </el-col>
-            <el-col :span="12">
-              <el-input v-model="searchKeyword" placeholder="搜索产品名称...">
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-            </el-col>
-          </el-row>
-        </div>
-
-        <div class="products-grid">
-          <el-row :gutter="30">
-            <el-col :span="6" v-for="product in paginatedProducts" :key="product.id">
-              <el-card class="product-card" :body-style="{ padding: '0px' }">
-                <img :src="product.image" class="product-image" />
-                <div class="product-info">
-                  <div class="product-header">
-                    <h3>{{ product.name }}</h3>
-                    <el-tag size="small" :type="product.tagType">{{ product.category }}</el-tag>
-                  </div>
-                  <p class="product-description">{{ product.description }}</p>
-                  <div class="product-rating">
-                    <el-rate v-model="product.rating" disabled show-score text-color="#ff9900" />
-                  </div>
-                  <div class="product-footer">
-                    <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      :icon="ShoppingCart" 
-                      class="buy-btn"
-                      @click="cartStore.addItem(product.id)"
-                    >
-                      加入购物车
-                    </el-button>
-                  </div>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
-        
-      </section>
-
-      <div class="pagination-section">
-        <el-pagination
-          v-if="filteredProducts.length > pageSize"
-          v-model:current-page="currentPage"
-          :page-size="pageSize"
-          :total="filteredProducts.length"
-          layout="prev, pager, next, jumper"
-          background
-          @current-change="handlePageChange"
-        />
-        <el-empty v-if="filteredProducts.length === 0" description="没有找到符合条件的产品" />
+    <section class="content-wrapper acrylic-section reveal-section">
+      <div class="filter-area">
+        <el-row :gutter="20" align="middle">
+          <el-col :span="6">
+            <el-select v-model="selectedCategory" placeholder="选择分类" style="width: 100%;">
+              <el-option label="全部分类" value=""></el-option>
+              <el-option label="多媒体设备" value="多媒体设备"></el-option>
+              <el-option label="教学设备" value="教学设备"></el-option>
+              <el-option label="实验设备" value="实验设备"></el-option>
+              <el-option label="家具设备" value="家具设备"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="6">
+            <el-select v-model="priceRange" placeholder="价格范围" style="width: 100%;">
+              <el-option label="全部价格" value=""></el-option>
+              <el-option label="1000元以下" value="0-1000"></el-option>
+              <el-option label="1000-5000元" value="1000-5000"></el-option>
+              <el-option label="5000-10000元" value="5000-10000"></el-option>
+              <el-option label="10000元以上" value="10000-999999"></el-option>
+            </el-select>
+          </el-col>
+          <el-col :span="12">
+            <el-input v-model="searchKeyword" placeholder="搜索产品名称...">
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+          </el-col>
+        </el-row>
       </div>
+
+      <div class="products-grid">
+        <el-row :gutter="30">
+          <el-col 
+            :span="6" 
+            v-for="product in paginatedProducts" 
+            :key="product.id"
+            class="product-col"
+          >
+            <el-card class="product-card" :body-style="{ padding: '0px' }">
+              <img :src="product.image" class="product-image" />
+              <div class="product-info">
+                <div class="product-header">
+                  <h3>{{ product.name }}</h3>
+                  <el-tag size="small" :type="product.tagType">{{ product.category }}</el-tag>
+                </div>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-rating">
+                  <el-rate v-model="product.rating" disabled show-score text-color="#ff9900" />
+                </div>
+                <div class="product-footer">
+                  <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    :icon="ShoppingCart" 
+                    class="buy-btn"
+                    @click="cartStore.addItem(product.id)"
+                  >
+                    加入购物车
+                  </el-button>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+    </section>
+
+    <div class="pagination-section">
+      <el-pagination
+        v-if="filteredProducts.length > pageSize"
+        v-model:current-page="currentPage"
+        :page-size="pageSize"
+        :total="filteredProducts.length"
+        layout="prev, pager, next, jumper"
+        background
+        @current-change="handlePageChange"
+      />
+      <el-empty v-if="filteredProducts.length === 0" description="没有找到符合条件的产品" />
     </div>
   </div>
 </template>
@@ -133,11 +134,8 @@ const filterProducts = () => {
     currentPage.value = 1;
 };
 
-// 使用 watch 监听筛选条件的变化
 watch([selectedCategory, priceRange], filterProducts);
-// 对搜索关键词使用防抖，优化性能
 watch(searchKeyword, debounce(filterProducts, 300));
-
 
 const paginatedProducts = computed(() => {
     const start = (currentPage.value - 1) * pageSize.value;
@@ -147,7 +145,7 @@ const paginatedProducts = computed(() => {
 
 const handlePageChange = (page) => {
     currentPage.value = page;
-    window.scrollTo({ top: 300, behavior: 'smooth' }); // 翻页后平滑滚动到列表顶部
+    window.scrollTo({ top: 300, behavior: 'smooth' });
 };
 
 onMounted(() => {
@@ -168,37 +166,57 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.content-wrapper {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px 40px;
+}
+
+.pagination-section {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px 40px;
+}
+
+@media (max-width: 768px) {
+  .content-wrapper,
+  .pagination-section {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
 .products-page {
   background-color: #f8f9fa;
   min-height: 100vh;
 }
-/* page-header 和 main-container 的样式已移至全局 main.css */
-
-/* 【修改点1】取消了负边距，让它不再层叠 */
 .filter-area {
   padding: 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* 在容器内增加分割线 */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* 【修改点2】产品列表现在是容器的一部分 */
 .products-grid {
-  padding-top: 40px; /* 增加与筛选区域的间距 */
+  padding-top: 40px;
+}
+
+.product-col {
+  margin-bottom: 40px;
 }
 
 .product-card {
-  /* 【修改点3】增加了底部外边距，让行间距更舒适 */
-  margin-bottom: 40px; 
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #fff; /* 确保卡片有白色背景 */
+  background-color: #fff;
 }
 .product-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px G30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
 }
 .product-image {
   width: 100%;
@@ -256,7 +274,6 @@ onMounted(() => {
   padding: 20px 0;
 }
 
-/* --- 页面头部样式 --- */
 .page-header {
   text-align: center;
   margin-bottom: 60px;
@@ -285,5 +302,4 @@ onMounted(() => {
     font-size: 24px;
   }
 }
-
 </style>
