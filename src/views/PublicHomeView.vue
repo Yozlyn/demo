@@ -1,70 +1,76 @@
 <template>
   <div class="public-home" :style="homeBackgroundStyle">
-    <div class="navbar">
-      <div class="nav-left">
-        <router-link to="/" class="brand-link">
-          <el-icon class="brand-icon"><Monitor /></el-icon>
-          <span class="brand-text">学子通教育装备商城</span>
-        </router-link>
-      </div>
-
-      <div class="nav-center">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索商品..."
-          class="search-input"
-          @keyup.enter="handleSearch"
-        >
-          <template #suffix>
-            <el-icon class="search-icon" @click="handleSearch"><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
-
-      <div class="nav-right">
-        <router-link to="/" class="nav-item">
-          <el-icon><House /></el-icon>
-          <span>首页</span>
-        </router-link>
-        <router-link to="/products" class="nav-item">
-          <el-icon><Goods /></el-icon>
-          <span>商品</span>
-        </router-link>
-        <el-button type="info" :icon="ShoppingCart" class="cart-btn" circle>
-          <el-tooltip content="购物车" placement="bottom">
-            <span></span>
-          </el-tooltip>
-          <el-badge :value="cartCount" class="cart-badge" />
-        </el-button>
-        <el-avatar icon="el-icon-user-solid" class="user-avatar" />
-      </div>
-    </div>
-
     <div class="main-container">
       <section class="section carousel-section">
-        <el-carousel height="500px" indicator-position="outside">
+        <el-carousel height="580px" indicator-position="outside" :autoplay="true" :interval="5000">
           <el-carousel-item v-for="(banner, index) in banners" :key="index">
             <div class="carousel-item">
-              <img :src="banner.image" :alt="banner.title" />
+              <div class="carousel-bg">
+                <img :src="banner.image" :alt="banner.title" />
+              </div>
               <div class="carousel-content">
                 <h2>{{ banner.title }}</h2>
                 <p>{{ banner.description }}</p>
-                <el-button type="primary" size="large">{{ banner.buttonText }}</el-button>
+                <el-button
+                  type="primary"
+                  size="large"
+                  @click="handleBannerClick(banner)"
+                >
+                  {{ banner.buttonText }}
+                </el-button>
               </div>
             </div>
           </el-carousel-item>
         </el-carousel>
       </section>
 
-      <section class="section products-section">
+      <section class="section new-products-section reveal-section acrylic-section">
+        <div class="section-header">
+          <h2>新品上市</h2>
+          <p>每月更新教育装备，引领教学创新</p>
+          <div class="section-divider"></div>
+        </div>
+        <el-row :gutter="30">
+          <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" v-for="product in newProducts" :key="product.id">
+            <el-card class="product-card new-product-card" :body-style="{ padding: '0px' }">
+              <div class="product-tag-new">新品</div>
+              <img :src="product.image" class="product-image" loading="lazy" />
+              <div class="product-info">
+                <div class="product-header">
+                  <h3>{{ product.name }}</h3>
+                  <el-tag size="small" :type="product.tagType">{{ product.category }}</el-tag>
+                </div>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="product-rating">
+                  <el-rate v-model="product.rating" disabled show-score />
+                </div>
+                <div class="product-footer">
+                  <div class="price-wrap">
+                    <span class="product-price">¥{{ product.price.toLocaleString() }}</span>
+                    <span class="product-original-price" v-if="product.originalPrice">
+                      ¥{{ product.originalPrice.toLocaleString() }}
+                    </span>
+                  </div>
+                  <el-button type="primary" size="small" :icon="ShoppingCart" class="buy-btn">
+                    立即购买
+                  </el-button>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </section>
+
+      <section class="section products-section reveal-section acrylic-section">
         <div class="section-header">
           <h2>热门教育装备</h2>
           <p>为学校和教育机构提供专业的教学设备和解决方案</p>
+          <div class="section-divider"></div>
         </div>
         <el-row :gutter="30">
           <el-col :span="6" :xs="24" :sm="12" :md="8" :lg="6" v-for="product in products" :key="product.id">
             <el-card class="product-card" :body-style="{ padding: '0px' }">
-              <img :src="product.image" class="product-image" />
+              <img :src="product.image" class="product-image" loading="lazy" />
               <div class="product-info">
                 <div class="product-header">
                   <h3>{{ product.name }}</h3>
@@ -85,20 +91,106 @@
           </el-col>
         </el-row>
         <div class="more-products">
-          <el-button type="primary" size="large" @click="$router.push('/products')">
+          <el-button type="primary" size="large" @click="$router.push('/products')" class="more-btn">
             查看更多商品
+            <el-icon class="more-icon"><ArrowRight /></el-icon>
           </el-button>
         </div>
       </section>
 
-      <section class="section features-section">
+      <section class="section cases-section reveal-section acrylic-section">
+        <div class="section-header">
+          <h2>成功案例</h2>
+          <p>全国2000+学校的共同选择</p>
+          <div class="section-divider"></div>
+        </div>
+        <el-row :gutter="40">
+          <el-col :span="8" :xs="24" :sm="24" :md="8" v-for="(caseItem, index) in cases" :key="index">
+            <div class="case-card">
+              <div class="case-image-wrap">
+                <img :src="caseItem.image" :alt="caseItem.school" class="case-image" loading="lazy" />
+                <div class="case-overlay">
+                  <span class="case-category">{{ caseItem.category }}</span>
+                </div>
+              </div>
+              <div class="case-info">
+                <h3 class="case-school">{{ caseItem.school }}</h3>
+                <p class="case-desc">{{ caseItem.description }}</p>
+                <div class="case-stats">
+                  <span class="stat-item">
+                    <el-icon><User /></el-icon> {{ caseItem.studentCount }}名学生受益
+                  </span>
+                  <span class="stat-item">
+                    <el-icon><Calendar /></el-icon> {{ caseItem.cooperationYear }}年合作
+                  </span>
+                </div>
+                <el-button link class="case-detail-btn" @click="showCaseDetail(caseItem)">
+                  查看详情 <el-icon class="detail-icon"><ArrowRight /></el-icon>
+                </el-button>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </section>
+
+      <section class="section news-section reveal-section acrylic-section">
+        <div class="section-header">
+          <h2>教育资讯</h2>
+          <p>关注教育装备行业动态与教学创新</p>
+          <div class="section-divider"></div>
+        </div>
+        <el-row :gutter="30">
+          <el-col :span="12" :xs="24" :sm="24" :md="12">
+            <div class="featured-news">
+              <img :src="featuredNewsImage" alt="精选资讯" class="featured-image" loading="lazy" />
+              <div class="featured-content">
+                <span class="news-tag">政策解读</span>
+                <h3 class="news-title">《教育信息化2.0行动计划》对中小学装备的影响</h3>
+                <p class="news-summary">深度解析最新政策对校园装备升级的具体要求，帮助学校把握采购方向...</p>
+                <div class="news-meta">
+                  <span><el-icon><Calendar /></el-icon> 2025-03-15</span>
+                  <span><el-icon><View /></el-icon> 2.4k阅读</span>
+                </div>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="12" :xs="24" :sm="24" :md="12">
+            <div class="news-list">
+              <div class="news-item" v-for="(news, index) in latestNews" :key="index">
+                <div class="news-item-content">
+                  <h4 class="news-item-title">{{ news.title }}</h4>
+                  <p class="news-item-desc">{{ news.summary }}</p>
+                  <div class="news-item-meta">
+                    <span><el-icon><Calendar /></el-icon> {{ news.date }}</span>
+                    <span class="news-item-category">{{ news.category }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+        <div class="more-news">
+          <el-button link class="more-news-btn">
+            查看全部资讯 <el-icon class="more-icon"><ArrowRight /></el-icon>
+          </el-button>
+        </div>
+      </section>
+
+      <section class="section features-section reveal-section acrylic-section">
         <div class="section-header">
           <h2>我们的优势</h2>
+          <div class="section-divider"></div>
         </div>
         <el-row :gutter="30">
           <el-col :span="8" :xs="24" :sm="24" :md="8" v-for="(feature, index) in features" :key="index">
-            <div class="feature-item">
-              <el-icon size="64" color="#2F80ED"><component :is="feature.icon" /></el-icon>
+            <div class="feature-item" @mouseenter="featureHoverIndex = index" @mouseleave="featureHoverIndex = -1">
+              <el-icon
+                size="64"
+                :color="featureHoverIndex === index ? '#2F80ED' : '#666'"
+                class="feature-icon"
+              >
+                <component :is="feature.icon" />
+              </el-icon>
               <h3>{{ feature.title }}</h3>
               <p>{{ feature.description }}</p>
             </div>
@@ -106,386 +198,142 @@
         </el-row>
       </section>
 
-      <section class="section partners-section">
+      <section class="section partners-section reveal-section acrylic-section">
         <div class="section-header">
           <h2>合作伙伴</h2>
           <p>与全国数千所学校建立长期合作关系</p>
+          <div class="section-divider"></div>
         </div>
         <div class="partners-logos">
           <div class="partner-item" v-for="(partner, index) in partners" :key="index">
-            <img :src="partner.logo" :alt="partner.name" class="partner-logo-img" />
+            <div class="partner-logo-container">
+              <img :src="partner.logo" :alt="partner.name" class="partner-logo-img" />
+            </div>
             <span class="partner-name">{{ partner.name }}</span>
           </div>
         </div>
       </section>
     </div>
-
-    <footer class="footer">
-      <div class="footer-content">
-        <el-row :gutter="40">
-          <el-col :span="6" :xs="24" :sm="12" :md="6">
-            <h3>学子通教育装备商城</h3>
-            <p>专业的教育装备供应商，为教育现代化提供优质产品和服务。</p>
-            <div class="social-links">
-              <el-button circle :icon="ChatDotRound" />
-              <el-button circle :icon="Message" />
-              <el-button circle :icon="Phone" />
-            </div>
-          </el-col>
-          <el-col :span="6" :xs="24" :sm="12" :md="6">
-            <h4>产品分类</h4>
-            <ul class="footer-links">
-              <li><a href="#" @click="navigateToProducts('多媒体设备')">多媒体设备</a></li>
-              <li><a href="#" @click="navigateToProducts('教学设备')">教学设备</a></li>
-              <li><a href="#" @click="navigateToProducts('实验设备')">实验设备</a></li>
-              <li><a href="#" @click="navigateToProducts('家具设备')">家具设备</a></li>
-            </ul>
-          </el-col>
-          <el-col :span="6" :xs="24" :sm="12" :md="6">
-            <h4>客户服务</h4>
-            <ul class="footer-links">
-              <li><router-link to="/contact">联系我们</router-link></li>
-              <li><router-link to="/about">关于我们</router-link></li>
-              <li><a href="#" @click="showService">售后服务</a></li>
-              <li><a href="#" @click="showHelp">帮助中心</a></li>
-            </ul>
-          </el-col>
-          <el-col :span="6" :xs="24" :sm="12" :md="6">
-            <h4>联系信息</h4>
-            <div class="contact-info">
-              <p><el-icon><Phone /></el-icon> 400-888-9999</p>
-              <p><el-icon><Message /></el-icon> service@xuezitong.com</p>
-              <p><el-icon><Location /></el-icon> 北京市海淀区中关村大街1号</p>
-            </div>
-          </el-col>
-        </el-row>
-        <el-divider />
-        <div class="footer-bottom">
-          <p>&copy; 2025 学子通教育装备商城. All Rights Reserved.</p>
-          <p>京ICP备12345678号 | 京公网安备11010802012345号</p>
-        </div>
-      </div>
-    </footer>
   </div>
 </template>
 
-<script>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import {
-  Monitor, House, Goods, InfoFilled, Phone, Search, ShoppingCart, Trophy, Tools, Headset,
-  ChatDotRound, Message, Location
-} from '@element-plus/icons-vue'
+  ShoppingCart, Trophy, Tools, Headset, ArrowRight, User, Calendar, View
+} from '@element-plus/icons-vue';
 
-// 导入背景图片
-import homeBackground from '@/assets/homebackground/1.jpg'
+const router = useRouter();
 
-export default {
-  name: 'PublicHomeView',
-  components: {
-    Monitor, House, Goods, InfoFilled, Phone, Search, ShoppingCart, Trophy, Tools, Headset,
-    ChatDotRound, Message, Location
-  },
-  setup() {
-    const router = useRouter()
-    const searchKeyword = ref('')
-    const cartCount = ref(3)
+// --- 响应式状态定义 ---
+const featureHoverIndex = ref(-1);
 
-    const banners = ref([
-      {
-        image: '/src/assets/home/banner1.jpg',
-        title: '智能教学设备',
-        description: '为现代化教学提供先进的智能设备解决方案',
-        buttonText: '了解详情'
-      },
-      {
-        image: '/src/assets/home/banner2.jpg',
-        title: '实验室装备',
-        description: '专业的实验室设备，助力科学教育发展',
-        buttonText: '查看产品'
-      },
-      {
-        image: '/src/assets/home/banner3.jpg',
-        title: '多媒体教学',
-        description: '打造互动式多媒体教学环境',
-        buttonText: '立即咨询'
-      }
-    ])
+// --- 模拟数据 ---
+const banners = ref([
+  { image: '/home/banner1.png', title: '智能教学设备', description: '为现代化教学提供先进的智能设备解决方案，覆盖K12到高等教育全场景', buttonText: '了解详情', path: '/products?category=智能设备' },
+  { image: '/home/banner2.png', title: '实验室装备', description: '符合新课标要求的专业实验室设备，助力科学教育发展与创新人才培养', buttonText: '查看产品', path: '/products?category=实验设备' },
+  { image: '/home/banner3.png', title: '多媒体教学', description: '打造互动式多媒体教学环境，让知识传递更高效、更生动', buttonText: '立即咨询', path: '/contact' }
+]);
+const newProducts = ref([
+  { id: 101, name: '4K超高清教学一体机', price: 15999, originalPrice: 17999, rating: 4.9, image: '/newnew/new1.png', category: '教学设备', tagType: 'primary', description: '4K分辨率+120Hz刷新率，支持40点触控' },
+  { id: 102, name: '便携式科学实验箱', price: 2499, rating: 4.7, image: '/newnew/new2.png', category: '实验设备', tagType: 'success', description: '包含200+实验器材，符合初中科学课程标准' },
+  { id: 103, name: 'AI智能录播系统', price: 29999, originalPrice: 32999, rating: 4.8, image: '/newnew/new3.png', category: '多媒体设备', tagType: 'warning', description: '自动跟踪教师移动，智能聚焦板书内容' },
+  { id: 104, name: '人体工学学生椅', price: 899, rating: 4.6, image: '/newnew/new4.png', category: '家具设备', tagType: 'info', description: '可调节高度与靠背角度，预防脊柱侧弯' }
+]);
+const products = ref([
+  { id: 1, name: '智能交互白板', price: 8999, rating: 4.8, image: '/hots/hot1.png', category: '多媒体设备', tagType: 'success', description: '支持多点触控，内置教学软件' },
+  { id: 2, name: '教学一体机', price: 12999, rating: 4.9, image: '/hots/hot2.png', category: '教学设备', tagType: 'primary', description: '集投影、音响、电脑于一体' },
+  { id: 3, name: '学生实验桌', price: 1299, rating: 4.7, image: '/hots/hot3.png', category: '实验设备', tagType: 'warning', description: '符合人体工程学设计，安全环保' },
+  { id: 4, name: '多媒体讲台', price: 3599, rating: 4.6, image: '/hots/hot4.png', category: '讲台设备', tagType: 'info', description: '集成多种教学设备控制功能' }
+]);
+const cases = ref([
+  { school: '北京市第一中学', image: '/success/success1.png', category: '多媒体教室改造', description: '完成30间教室的多媒体设备升级，实现智能教学全覆盖', studentCount: 2800, cooperationYear: 2023 },
+  { school: '上海实验中学', image: '/success/success2.png', category: '实验室建设', description: '建成8间标准化理科实验室，满足新课标实验教学要求', studentCount: 1500, cooperationYear: 2024 },
+  { school: '广州外国语学校', image: '/success/success3.png', category: '校园整体方案', description: '提供从教室到图书馆的一站式装备解决方案', studentCount: 3200, cooperationYear: 2022 }
+]);
+const latestNews = ref([
+  { title: '2025年教育装备采购趋势分析', summary: '从政策导向和技术发展角度，预测今年教育装备市场的三大趋势...', date: '2025-04-02', category: '行业分析' },
+  { title: '智能交互设备在课堂教学中的应用技巧', summary: '资深教师分享智能白板的5个实用教学技巧，提升课堂效率...', date: '2025-03-28', category: '教学方法' },
+  { title: '实验室安全管理规范与设备维护指南', summary: '详解实验室设备的日常维护要点与安全管理规范...', date: '2025-03-10', category: '设备维护' }
+]);
+const features = ref([
+  { icon: Trophy, title: '品质保证', description: '所有产品均通过国家质量认证，提供可靠保障' },
+  { icon: Tools, title: '专业服务', description: '提供从选型到安装调试的全程专业服务支持' },
+  { icon: Headset, title: '售后无忧', description: '7x24小时客服支持，完善的售后服务体系' }
+]);
+const partners = ref([
+  { name: '北京大学', logo: '/university/beijing.png' },
+  { name: '复旦大学', logo: '/university/fudan.png' },
+  { name: '南京大学', logo: '/university/nanjing.png' },
+  { name: '清华大学', logo: '/university/qinghua.png' },
+  { name: '上海交通大学', logo: '/university/shanghai.webp' },
+  { name: '浙江大学', logo: '/university/zhejiang.png' },
+]);
+const featuredNewsImage = ref('/news/featured.png');
 
-    const products = ref([
-      {
-        id: 1,
-        name: '智能交互白板',
-        price: 8999,
-        rating: 4.8,
-        image: '/src/assets/home/product1.webp',
-        category: '多媒体设备',
-        tagType: 'success',
-        description: '支持多点触控，内置教学软件，提升课堂互动体验'
-      },
-      {
-        id: 2,
-        name: '教学一体机',
-        price: 12999,
-        rating: 4.9,
-        image: '/src/assets/home/product2.jpg',
-        category: '教学设备',
-        tagType: 'primary',
-        description: '集投影、音响、电脑于一体的现代化教学设备'
-      },
-      {
-        id: 3,
-        name: '学生实验桌',
-        price: 1299,
-        rating: 4.7,
-        image: '/src/assets/home/product1.webp',
-        category: '实验设备',
-        tagType: 'warning',
-        description: '符合人体工程学设计，安全环保材质制造'
-      },
-      {
-        id: 4,
-        name: '多媒体讲台',
-        price: 3599,
-        rating: 4.6,
-        image: '/src/assets/home/product2.jpg',
-        category: '讲台设备',
-        tagType: 'info',
-        description: '集成多种教学设备控制功能的智能讲台'
-      }
-    ])
+// --- 计算属性 ---
+const homeBackgroundStyle = computed(() => ({
+  backgroundImage: `url(/homebackground/homebackground.jpg)`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed'
+}));
 
-    const features = ref([
-      {
-        icon: 'Trophy',
-        title: '品质保证',
-        description: '所有产品均通过国家质量认证，为教育机构提供可靠的设备保障'
-      },
-      {
-        icon: 'Tools',
-        title: '专业服务',
-        description: '提供从产品选型到安装调试的全程专业服务支持'
-      },
-      {
-        icon: 'Headset',
-        title: '售后无忧',
-        description: '7x24小时客服支持，完善的售后服务体系让您无后顾之忧'
-      }
-    ])
-
-    const partners = ref([
-      { name: '北京大学', logo: '/src/assets/university/beijing.png' },
-      { name: '复旦大学', logo: '/src/assets/university/fudan.png' },
-      { name: '南京大学', logo: '/src/assets/university/nanjing.jpg' },
-      { name: '清华大学', logo: '/src/assets/university/qinghua.png' },
-      { name: '上海交通大学', logo: '/src/assets/university/shanghai.webp' },
-      { name: '浙江大学', logo: '/src/assets/university/zhejiang.png' },
-    ])
-
-    const homeBackgroundStyle = computed(() => ({
-      backgroundImage: `url(${homeBackground})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed'
-    }))
-
-    const handleSearch = () => {
-      if (searchKeyword.value.trim()) {
-        router.push({
-          path: '/products',
-          query: { search: searchKeyword.value }
-        })
-        ElMessage.success(`搜索: ${searchKeyword.value}`)
-      }
-    }
-
-    const navigateToProducts = (category) => {
-      router.push({
-        path: '/products',
-        query: { category }
-      })
-    }
-
-    const showService = () => {
-      ElMessage.info('售后服务页面开发中...')
-    }
-
-    const showHelp = () => {
-      ElMessage.info('帮助中心页面开发中...')
-    }
-
-    return {
-      searchKeyword,
-      cartCount,
-      banners,
-      products,
-      features,
-      partners,
-      homeBackgroundStyle,
-      handleSearch,
-      navigateToProducts,
-      showService,
-      showHelp,
-      Monitor, House, Goods, InfoFilled, Phone, Search, ShoppingCart, Trophy, Tools, Headset,
-      ChatDotRound, Message, Location
-    }
+// --- 方法 ---
+const handleBannerClick = (banner) => {
+  if (banner.path) {
+    router.push(banner.path);
   }
-}
+};
+
+const showCaseDetail = (caseItem) => {
+  ElMessage.info(`正在查看 ${caseItem.school} 的案例详情...`);
+};
+
+// --- 生命周期钩子 ---
+onMounted(() => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal-section').forEach(section => {
+    observer.observe(section);
+  });
+});
 </script>
 
 <style scoped>
-/* -------------------- 通用样式与布局 -------------------- */
-.public-home {
-  min-height: 100vh;
-}
-
-.main-container {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.section {
-  padding: 80px 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(5px);
-  border-radius: 10px;
-  margin-bottom: 80px;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: 60px;
-}
-
-.section-header h2 {
-  font-size: 38px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 10px;
-}
-
-.section-header p {
-  font-size: 16px;
-  color: #7f8c8d;
-}
-
-/* -------------------- 头部导航栏优化 -------------------- */
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: none;
-}
-
-.nav-left {
-  display: flex;
-  align-items: center;
-}
-
-.nav-center {
-  display: flex;
-  flex: 1;
-  justify-content: center;
-  margin: 0 20px; /* 增加与左右两侧的间距 */
-}
-
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 15px; /* 增加按钮和菜单项之间的间距 */
-}
-
-.brand-link {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: #333;
-  font-size: 22px;
-  font-weight: bold;
-}
-
-.brand-icon {
-  margin-right: 8px;
-  font-size: 30px;
-  color: #2F80ED;
-}
-
-.search-input {
-  width: 400px; /* 搜索框加宽 */
-  border-radius: 20px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  height: 60px; /* 与el-menu-item保持高度一致 */
-  text-decoration: none;
-  color: #606266;
-  font-size: 14px;
-  transition: color 0.3s ease;
-}
-
-.nav-item:hover,
-.nav-item.router-link-active {
-  color: #2F80ED;
-  border-bottom: 2px solid #2F80ED;
-}
-
-.nav-item .el-icon {
-  margin-right: 5px;
-}
-
-.cart-btn {
-  position: relative;
-  border-radius: 50%;
-}
-
-.cart-btn span {
-  display: none;
-}
-
-.cart-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-}
-
-.user-avatar {
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color 0.3s ease;
-}
-
-.user-avatar:hover {
-  border-color: #2F80ED;
-}
-
-/* -------------------- 轮播图美化 -------------------- */
-.carousel-section {
-  padding-top: 20px;
-}
-
+/* --- 页面主体及通用样式 --- */
 .carousel-item {
   position: relative;
-  height: 500px;
-  border-radius: 16px;
+  height: 100%;
+}
+
+.carousel-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.carousel-item img {
+.carousel-bg img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  animation: scale-in 1.5s ease-out;
+}
+
+@keyframes scale-in {
+  from { transform: scale(1.05); }
+  to { transform: scale(1); }
 }
 
 .carousel-content {
@@ -494,47 +342,38 @@ export default {
   left: 10%;
   transform: translateY(-50%);
   color: white;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  z-index: 10;
 }
 
 .carousel-content h2 {
-  font-size: 52px;
-  margin-bottom: 20px;
+  font-size: 58px;
   font-weight: bold;
+  margin-bottom: 20px;
 }
 
 .carousel-content p {
   font-size: 20px;
   margin-bottom: 30px;
-  line-height: 1.5;
   max-width: 600px;
 }
 
-/* -------------------- 商品卡片优化 -------------------- */
-.products-section {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
-}
-
 .product-card {
-  margin-bottom: 30px;
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
   border-radius: 12px;
-  border: none;
   overflow: hidden;
 }
 
 .product-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .product-image {
   width: 100%;
-  height: 240px;
+  height: 250px;
   object-fit: cover;
-  border-radius: 12px 12px 0 0;
 }
 
 .product-info {
@@ -544,23 +383,22 @@ export default {
 .product-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 10px;
 }
 
 .product-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #34495e;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
 }
 
 .product-description {
+  color: #909399;
   font-size: 14px;
-  color: #7f8c8d;
   margin-bottom: 15px;
   line-height: 1.5;
-  height: 40px;
+  height: 42px;
   overflow: hidden;
 }
 
@@ -577,250 +415,374 @@ export default {
 .product-price {
   font-size: 24px;
   font-weight: bold;
-  color: #2F80ED;
-}
-
-.buy-btn {
-  border-radius: 20px;
+  color: #F56C6C;
 }
 
 .more-products {
-  text-align: center;
-  margin-top: 60px;
+  margin-top: 50px;
 }
 
-/* -------------------- 特色服务优化 -------------------- */
-.features-section {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+.more-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 30px;
+}
+
+.more-icon {
+  margin-left: 8px;
+  transition: transform 0.3s;
+}
+
+.more-btn:hover .more-icon {
+  transform: translateX(3px);
 }
 
 .feature-item {
+  padding: 30px;
   text-align: center;
-  padding: 40px 20px;
-  background: white;
+  background-color: white;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s;
 }
 
 .feature-item:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transform: translateY(-10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  margin-bottom: 20px;
+  transition: transform 0.3s;
 }
 
 .feature-item h3 {
-  margin: 20px 0 15px;
-  font-size: 22px;
-  color: #34495e;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .feature-item p {
-  color: #7f8c8d;
+  color: #666;
+  font-size: 14px;
   line-height: 1.6;
-}
-
-/* -------------------- 合作伙伴模块 -------------------- */
-.partners-section {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
 }
 
 .partners-logos {
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-wrap: wrap;
-  gap: 40px;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 40px;
 }
 
 .partner-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  width: 140px;
-  padding: 10px;
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 150px;
 }
 
-.partner-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+.partner-logo-container {
+  width: 120px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .partner-logo-img {
-  width: 80px;
-  height: 80px;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
-  filter: grayscale(100%);
-  opacity: 0.6;
-  transition: filter 0.3s ease, opacity 0.3s ease;
-}
-
-.partner-item:hover .partner-logo-img {
-  filter: grayscale(0%);
-  opacity: 1;
 }
 
 .partner-name {
   font-size: 14px;
-  font-weight: 500;
-  color: #555;
+  color: #666;
   text-align: center;
 }
 
-/* -------------------- 页脚优化 -------------------- */
-.footer {
-  background: #2c3e50;
+.product-tag-new {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #F56C6C;
   color: white;
-  padding: 80px 0 30px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
 }
 
-.footer-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+.new-product-card {
+  position: relative;
 }
 
-.footer h3, .footer h4 {
-  margin-bottom: 20px;
-  color: white;
-}
-
-.footer h3 {
-  font-size: 24px;
-}
-
-.footer h4 {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.footer p {
-  line-height: 1.8;
-  color: #bdc3c7;
-  margin-bottom: 10px;
-}
-
-.social-links .el-button {
-  background: #34495e;
-  border-color: #34495e;
-  color: white;
-}
-
-.footer-links li {
-  margin-bottom: 15px;
-}
-
-.footer-links a {
-  color: #bdc3c7;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.footer-links a:hover {
-  color: #2F80ED;
-}
-
-.contact-info p {
+.price-wrap {
   display: flex;
   align-items: center;
-  color: #bdc3c7;
+  gap: 10px;
 }
 
-.contact-info .el-icon {
-  margin-right: 10px;
-  color: #2F80ED;
-  font-size: 18px;
+.product-original-price {
+  font-size: 16px;
+  color: #909399;
+  text-decoration: line-through;
 }
 
-.footer-bottom {
-  text-align: center;
-  padding-top: 30px;
-  color: #8c929a;
+.case-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.footer-bottom p {
-  margin-bottom: 8px;
+.case-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+.case-image-wrap {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.case-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.case-card:hover .case-image {
+  transform: scale(1.05);
+}
+
+.case-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+
+.case-category {
+  color: white;
+  background: #2F80ED;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.case-info {
+  padding: 20px;
+}
+
+.case-school {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.case-desc {
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.case-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #888;
+}
+
+.stat-item .el-icon {
+  margin-right: 5px;
   font-size: 14px;
 }
 
-/* -------------------- 响应式优化 -------------------- */
-@media (max-width: 768px) {
-  .navbar {
+.case-detail-btn {
+  color: #2F80ED;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.detail-icon {
+  margin-left: 5px;
+  font-size: 14px;
+  transition: transform 0.3s;
+}
+
+.case-detail-btn:hover .detail-icon {
+  transform: translateX(3px);
+}
+
+.featured-news {
+  display: flex;
+  gap: 20px;
+  background: #f7f9fc;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  height: 100%;
+}
+
+.featured-image {
+  width: 40%;
+  object-fit: cover;
+}
+
+.featured-content {
+  padding: 25px;
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+}
+
+.news-tag {
+  display: inline-block;
+  background: #E6F7FF;
+  color: #1890FF;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 10px;
+  width: fit-content;
+}
+
+.news-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.news-summary {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+
+.news-meta {
+  display: flex;
+  gap: 15px;
+  color: #888;
+  font-size: 14px;
+}
+
+.news-meta .el-icon {
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+}
+
+.news-item {
+  background: #f7f9fc;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  transition: transform 0.3s;
+}
+
+.news-item:hover {
+  transform: translateX(5px);
+}
+
+.news-item-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.news-item-desc {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-item-meta {
+  display: flex;
+  justify-content: space-between;
+  color: #888;
+  font-size: 12px;
+}
+
+.news-item-category {
+  background: #E6F7FF;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.more-news {
+  text-align: right;
+  margin-top: 30px;
+}
+
+.more-news-btn {
+  color: #2F80ED;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+@media (max-width: 992px) {
+  .featured-news {
     flex-direction: column;
-    padding: 15px;
   }
 
-  .nav-left {
-    margin-bottom: 10px;
-  }
-
-  .nav-center, .nav-right {
-    flex-wrap: wrap;
-    justify-content: center;
+  .featured-image, .featured-content {
     width: 100%;
-    margin: 0;
-    margin-bottom: 10px;
-  }
-  
-  .search-input {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  
-  .brand-link {
-    font-size: 20px;
   }
 
-  .carousel-section {
-    padding-top: 0;
+  .featured-image {
+    height: 200px;
   }
+}
 
+@media (max-width: 768px) {
   .carousel-item {
-    height: 300px;
+    height: 400px;
   }
-  
-  .carousel-content {
-    left: 5%;
-  }
-  
+
   .carousel-content h2 {
-    font-size: 32px;
+    font-size: 36px;
   }
-  
+
   .carousel-content p {
     font-size: 16px;
   }
-  
-  .section {
-    padding: 40px 0;
-  }
 
-  .section-header {
-    margin-bottom: 30px;
-  }
-  
-  .section-header h2 {
-    font-size: 28px;
-  }
-  
-  .product-card, .feature-item {
-    margin-bottom: 20px;
-  }
-  
-  .footer {
-    padding: 40px 0 20px;
-  }
-  
-  .footer-content .el-col {
-    margin-bottom: 30px;
+  .case-image-wrap {
+    height: 160px;
   }
 }
 </style>

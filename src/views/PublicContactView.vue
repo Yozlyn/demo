@@ -97,7 +97,7 @@
         </el-col>
         <el-col :span="12">
           <div class="contact-image">
-            <img src="/src/assets/home/banner2.jpg" alt="联系我们" />
+            <img src="/contact/contact1.jpg" alt="联系我们" />
             <div class="contact-tips">
               <h3>为什么选择我们？</h3>
               <ul>

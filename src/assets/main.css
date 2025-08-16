@@ -21,15 +21,77 @@ a,
   }
 }
 
-@media (min-width: 100%) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* --- 全局布局与效果样式 --- */
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 40px;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0;
-  }
+/* 内页通用的头部横幅样式 */
+.page-header {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin-bottom: -60px; /* 关键：让下面的内容可以向上层叠 */
+}
+.page-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+.page-header p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* 毛玻璃/亚克力效果 */
+.acrylic-section {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* 兼容 Safari */
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-top: 50px;
+  margin-bottom: 50px;
+  padding: 60px 40px;
+}
+
+/* 滚动浮现动画 */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+.reveal-section.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 通用版块标题 */
+.section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+.section-header h2 {
+  font-size: 38px;
+  font-weight: bold;
+  color: #333;
+}
+.section-header p {
+  font-size: 18px;
+  color: #666;
+  margin-top: 10px;
+}
+.section-divider {
+  width: 80px;
+  height: 4px;
+  background: #2F80ED;
+  margin: 20px auto 0;
+  border-radius: 2px;
 }

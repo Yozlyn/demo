@@ -184,7 +184,7 @@
             </el-icon>
             <el-dropdown trigger="click">
               <el-avatar class="user-avatar">
-                <img src="@/assets/images/avatar.jpg" alt="管理员头像">
+                <img src="/images/avatar.jpg" alt="管理员头像">
               </el-avatar>
               <template #dropdown>
                 <el-dropdown-menu>

@@ -38,7 +38,7 @@
         </el-col>
         <el-col :span="12">
           <div class="intro-image">
-            <img src="/src/assets/home/banner1.jpg" alt="公司介绍" />
+            <img src="/contact/contact1.jpg" alt="公司介绍" />
           </div>
         </el-col>
       </el-row>
